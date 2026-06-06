@@ -2,20 +2,15 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Serverless P2P Video Call</title>
-    <!-- Using Tailwind CSS for modern, responsive styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Custom scrollbar for textareas */
         textarea::-webkit-scrollbar { width: 6px; }
         textarea::-webkit-scrollbar-track { background: transparent; }
         textarea::-webkit-scrollbar-thumb { background-color: #4B5563; border-radius: 10px; }
         .tab-active { border-bottom: 2px solid #0b5cff; color: #0b5cff; }
-        
-        /* Zoom-like specific styles */
         body { background-color: #242424; }
         .zoom-control-bar { background-color: #1a1a1a; }
         .zoom-btn { transition: all 0.2s ease; }
@@ -25,81 +20,101 @@
         .zoom-btn-danger:hover { background-color: #ff4d4f; color: white; }
     </style>
 </head>
-<body class="text-white min-h-screen font-sans selection:bg-blue-500 selection:text-white flex flex-col h-screen overflow-hidden">
+<body class="text-white min-h-[100dvh] h-[100dvh] font-sans selection:bg-blue-500 selection:text-white flex flex-col overflow-hidden">
 
-    <!-- Top Header (Info) -->
-    <header class="absolute top-0 w-full p-4 flex justify-between items-center z-10 pointer-events-none">
-        <div class="flex items-center space-x-2 bg-black/50 px-3 py-1.5 rounded-md backdrop-blur-sm pointer-events-auto">
-            <i class="fa-solid fa-shield-halved text-green-500 text-xs"></i>
-            <span class="text-xs font-semibold tracking-wide">P2P Encrypted</span>
+    <!-- Top Header -->
+    <header class="absolute top-0 w-full p-2 sm:p-4 flex justify-between items-center z-10 pointer-events-none">
+        <div class="flex items-center space-x-1.5 sm:space-x-2 bg-black/50 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md backdrop-blur-sm pointer-events-auto">
+            <i class="fa-solid fa-shield-halved text-green-500 text-[10px] sm:text-xs"></i>
+            <span class="text-[10px] sm:text-xs font-semibold tracking-wide">P2P Encrypted</span>
         </div>
-        <div id="connectionStatus" class="flex items-center space-x-2 bg-black/50 px-3 py-1.5 rounded-md backdrop-blur-sm pointer-events-auto">
-            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
-            <span id="statusText" class="text-xs font-semibold">Disconnected</span>
+        <div id="connectionStatus" class="flex items-center space-x-1.5 sm:space-x-2 bg-black/50 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md backdrop-blur-sm pointer-events-auto">
+            <span id="statusDot" class="w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+            <span id="statusText" class="text-[10px] sm:text-xs font-semibold">Disconnected</span>
         </div>
     </header>
 
     <!-- Main Video Area -->
-    <main class="flex-grow relative flex items-center justify-center p-4 pt-16 pb-24 bg-[#242424]">
+    <main class="flex-grow relative flex items-center justify-center p-2 sm:p-4 pt-14 sm:pt-16 pb-20 sm:pb-24 bg-[#242424]">
         
-        <!-- Setup/Connection Overlay (Hidden when connected) -->
-        <div id="setupOverlay" class="absolute inset-0 z-20 flex items-center justify-center bg-[#242424]/95 backdrop-blur-md overflow-y-auto p-4">
-            <div class="max-w-2xl w-full">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-white mb-2">Join Meeting</h1>
-                    <p class="text-gray-400">Serverless peer-to-peer connection</p>
+        <!-- Setup/Connection Overlay -->
+        <div id="setupOverlay" class="absolute inset-0 z-20 flex items-center justify-center bg-[#242424]/95 backdrop-blur-md overflow-y-auto p-3 sm:p-4">
+            <div class="max-w-2xl w-full my-auto">
+                <div class="text-center mb-6 sm:mb-8 mt-4 sm:mt-0">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Join Meeting</h1>
+                    <p class="text-sm sm:text-base text-gray-400">Serverless peer-to-peer connection</p>
                 </div>
 
-                <!-- Step 1: Initialize Camera -->
-                <div id="step1Panel" class="bg-[#1a1a1a] p-8 rounded-xl border border-gray-800 shadow-2xl text-center">
-                    <div class="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <i class="fa-solid fa-video text-blue-500 text-3xl"></i>
+                <!-- Step 1: Initialize Camera & Name -->
+                <div id="step1Panel" class="bg-[#1a1a1a] p-6 sm:p-8 rounded-xl border border-gray-800 shadow-2xl text-center max-w-md mx-auto">
+                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
+                        <i class="fa-solid fa-video text-blue-500 text-2xl sm:text-3xl"></i>
                     </div>
-                    <h2 class="text-xl font-semibold mb-4 text-gray-200">Start Audio/Video</h2>
-                    <p class="text-gray-400 mb-6 text-sm">Allow access to your camera and microphone to begin the connection process.</p>
-                    <button id="startBtn" onclick="startMedia()" class="bg-[#0b5cff] hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-medium transition duration-200 shadow-lg w-full md:w-auto">
-                        Allow Access
+                    <h2 class="text-lg sm:text-xl font-semibold mb-2 text-gray-200">Welcome</h2>
+                    <p class="text-gray-400 mb-6 text-xs sm:text-sm">Please enter your name and allow camera access to continue.</p>
+                    
+                    <div class="mb-5 text-left">
+                        <label class="block text-gray-400 text-xs sm:text-sm font-medium mb-2">Your Name</label>
+                        <input type="text" id="userNameInput" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-blue-500 text-white" placeholder="e.g. Jane Doe" autocomplete="off">
+                    </div>
+
+                    <button id="startBtn" onclick="startMedia()" class="bg-[#0b5cff] hover:bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-lg font-medium transition duration-200 shadow-lg w-full text-sm sm:text-base">
+                        Allow Access & Continue
                     </button>
-                    <p id="mediaError" class="text-red-400 mt-4 text-sm hidden"></p>
+                    <p id="mediaError" class="text-red-400 mt-4 text-xs sm:text-sm hidden"></p>
                 </div>
 
                 <!-- Step 2: Connection Panels -->
-                <div id="connectionPanel" class="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-2xl hidden">
-                    <!-- Tabs -->
-                    <div class="flex border-b border-gray-800">
-                        <button onclick="switchTab('host')" id="tab-host" class="flex-1 py-4 text-center font-medium hover:bg-gray-800 transition tab-active">
-                            New Meeting (Host)
+                <div id="connectionPanel" class="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-2xl hidden max-w-lg mx-auto">
+                    <div class="flex border-b border-gray-800 text-sm sm:text-base">
+                        <button onclick="switchTab('host')" id="tab-host" class="flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition tab-active px-2">
+                            New Meeting
                         </button>
-                        <button onclick="switchTab('join')" id="tab-join" class="flex-1 py-4 text-center font-medium hover:bg-gray-800 transition text-gray-400">
-                            Join Meeting (Guest)
+                        <button onclick="switchTab('join')" id="tab-join" class="flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition text-gray-400 px-2">
+                            Join Meeting
                         </button>
                     </div>
 
                     <!-- Host Panel -->
-                    <div id="panel-host" class="p-6 md:p-8">
-                        <div class="space-y-6">
-                            <div class="bg-[#242424] p-5 rounded-lg border border-gray-700 text-center">
-                                <h3 class="font-semibold text-gray-200 mb-2">Your Meeting Code</h3>
-                                <div class="flex justify-center items-center space-x-3 mb-4">
-                                    <span id="roomIdDisplay" class="text-3xl font-mono text-[#0b5cff] tracking-widest font-bold">------</span>
-                                    <button onclick="copyRoomId()" id="copyRoomBtn" class="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded transition hidden"><i class="fa-solid fa-copy"></i></button>
+                    <div id="panel-host" class="p-5 sm:p-6 md:p-8">
+                        <div class="space-y-4 sm:space-y-6">
+                            <div class="bg-[#242424] p-4 sm:p-5 rounded-lg border border-gray-700 text-center">
+                                <h3 class="font-semibold text-gray-200 mb-2 text-sm sm:text-base">Your Meeting Code</h3>
+                                
+                                <div id="preGenerateState">
+                                    <p class="text-xs sm:text-sm text-gray-400 mb-4 mt-2">Generate a code to invite participants via decentralized signaling.</p>
+                                    <button id="createRoomBtn" onclick="createRoom()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 shadow-md w-full text-sm sm:text-base">
+                                        Generate Meeting Code
+                                    </button>
                                 </div>
-                                <p class="text-sm text-gray-400 mb-4">Share this code with your guest. Decentralized signaling will connect you automatically.</p>
-                                <button id="createRoomBtn" onclick="createRoom()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 shadow-md w-full">
-                                    Generate Meeting Code
-                                </button>
+
+                                <div id="postGenerateState" class="hidden">
+                                    <div class="flex justify-center items-center space-x-2 sm:space-x-3 mb-4 mt-2">
+                                        <span id="roomIdDisplay" class="text-3xl sm:text-4xl font-mono text-[#0b5cff] tracking-widest font-bold">------</span>
+                                    </div>
+                                    <p class="text-xs sm:text-sm text-gray-400 mb-5">Waiting for participant to join...</p>
+                                    
+                                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full">
+                                        <button onclick="copyRoomId()" id="copyRoomBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
+                                            <i class="fa-solid fa-copy mr-2"></i>Copy Code
+                                        </button>
+                                        <button onclick="copyInviteLink()" id="copyLinkBtn" class="flex-1 bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
+                                            <i class="fa-solid fa-link mr-2"></i>Copy Link
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Join Panel -->
-                    <div id="panel-join" class="p-6 md:p-8 hidden">
-                        <div class="space-y-6">
-                            <div class="bg-[#242424] p-5 rounded-lg border border-gray-700">
-                                <h3 class="font-semibold text-gray-200 mb-4 text-center">Enter Meeting Code</h3>
+                    <div id="panel-join" class="p-5 sm:p-6 md:p-8 hidden">
+                        <div class="space-y-4 sm:space-y-6">
+                            <div class="bg-[#242424] p-4 sm:p-5 rounded-lg border border-gray-700">
+                                <h3 class="font-semibold text-gray-200 mb-3 sm:mb-4 text-center text-sm sm:text-base">Enter Meeting Code</h3>
                                 <div class="space-y-4">
-                                    <input type="text" id="roomInput" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-center text-xl tracking-widest text-blue-400 focus:outline-none focus:border-blue-500 font-mono uppercase" placeholder="e.g. XYZ123" maxlength="6">
-                                    <button id="joinRoomBtn" onclick="joinRoom()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md">
+                                    <input type="text" id="roomInput" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-center text-xl tracking-widest text-blue-400 focus:outline-none focus:border-blue-500 font-mono uppercase" placeholder="XYZ123" maxlength="6">
+                                    <button id="joinRoomBtn" onclick="joinRoom()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md text-sm sm:text-base">
                                         Join Meeting
                                     </button>
                                 </div>
@@ -110,151 +125,194 @@
             </div>
         </div>
 
-        <!-- Video Elements (Zoom Style Layout) -->
+        <!-- Video Elements -->
         <div class="w-full h-full relative flex items-center justify-center max-w-7xl mx-auto rounded-xl overflow-hidden">
-            <!-- Remote Video (Main Active Speaker) -->
-            <video id="remoteVideo" class="w-full h-full object-contain bg-black rounded-xl shadow-lg border border-[#333]" autoplay playsinline></video>
             
-            <!-- Default Avatar for Remote (When no video) -->
-            <div id="remoteAvatar" class="absolute inset-0 flex flex-col items-center justify-center bg-[#242424] z-0">
-                <div class="w-32 h-32 bg-gray-700 rounded-full flex items-center justify-center mb-4 text-4xl text-gray-400">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-                <p class="text-gray-400 text-lg font-medium">Waiting for participant...</p>
+            <!-- Remote Video -->
+            <video id="remoteVideo" class="w-full h-full object-cover md:object-contain bg-black rounded-xl shadow-lg border border-[#333]" autoplay playsinline></video>
+            
+            <!-- Remote Name Label (Floating) -->
+            <div id="remoteNameLabelContainer" class="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-black/60 px-2 py-1 rounded text-xs sm:text-sm backdrop-blur-sm text-gray-200 hidden z-10">
+                <span id="remoteNameDisplay">Participant</span>
             </div>
 
-            <!-- Local Video (PiP / Floating Window) -->
-            <div class="absolute bottom-4 right-4 w-48 md:w-64 aspect-video bg-black rounded-lg overflow-hidden border-2 border-[#333] shadow-2xl z-10 hover:border-gray-500 transition-colors cursor-move" id="localVideoContainer">
+            <!-- Default Avatar for Remote -->
+            <div id="remoteAvatar" class="absolute inset-0 flex flex-col items-center justify-center bg-[#242424] z-0">
+                <div class="w-24 h-24 sm:w-32 sm:h-32 bg-gray-700 rounded-full flex items-center justify-center mb-3 sm:mb-4 text-3xl sm:text-4xl text-gray-400">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <p class="text-gray-400 text-sm sm:text-lg font-medium" id="remoteAvatarName">Waiting for participant...</p>
+            </div>
+
+            <!-- Local Video (PiP) -->
+            <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-24 sm:w-40 md:w-64 aspect-[3/4] sm:aspect-video bg-black rounded-lg overflow-hidden border sm:border-2 border-[#333] shadow-2xl z-10 hover:border-gray-500 transition-colors" id="localVideoContainer">
                 <video id="localVideo" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline muted></video>
-                <div class="absolute bottom-1 left-2 bg-black/60 px-2 py-0.5 rounded text-[10px] backdrop-blur-sm text-gray-200">You</div>
+                <div class="absolute bottom-1 left-1.5 sm:bottom-1 sm:left-2 bg-black/60 px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-[8px] sm:text-[10px] backdrop-blur-sm text-gray-200" id="localNameLabel">You</div>
             </div>
         </div>
 
     </main>
 
-    <!-- Bottom Control Bar (Zoom Style) -->
-    <footer class="zoom-control-bar absolute bottom-0 w-full h-16 border-t border-[#333] flex items-center justify-between px-4 z-30">
-        
-        <!-- Left Controls (Audio/Video) -->
-        <div class="flex items-center space-x-1 md:space-x-2">
-            <button onclick="toggleAudio()" id="micBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-gray-300">
-                <i class="fa-solid fa-microphone text-lg mb-1" id="micIcon"></i>
-                <span class="text-[10px]">Mute</span>
+    <!-- Bottom Control Bar -->
+    <footer class="zoom-control-bar absolute bottom-0 w-full h-16 sm:h-20 border-t border-[#333] flex items-center justify-between px-2 sm:px-6 z-30">
+        <div class="flex items-center space-x-0.5 sm:space-x-2">
+            <button onclick="toggleAudio()" id="micBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300">
+                <i class="fa-solid fa-microphone text-base sm:text-xl mb-1" id="micIcon"></i>
+                <span class="text-[9px] sm:text-[11px] font-medium leading-none">Mute</span>
             </button>
-            <button onclick="toggleVideo()" id="camBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-gray-300">
-                <i class="fa-solid fa-video text-lg mb-1" id="camIcon"></i>
-                <span class="text-[10px]">Stop Video</span>
+            <button onclick="toggleVideo()" id="camBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300">
+                <i class="fa-solid fa-video text-base sm:text-xl mb-1" id="camIcon"></i>
+                <span class="text-[9px] sm:text-[11px] font-medium leading-none text-center">Stop Video</span>
             </button>
         </div>
 
-        <!-- Center Controls -->
-        <div class="flex items-center space-x-1 md:space-x-2">
-            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-gray-300 hidden md:flex">
-                <i class="fa-solid fa-user-group text-lg mb-1"></i>
-                <span class="text-[10px]">Participants</span>
+        <div class="flex items-center space-x-0.5 sm:space-x-2">
+            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300 hidden md:flex">
+                <i class="fa-solid fa-user-group text-xl mb-1"></i>
+                <span class="text-[11px] font-medium leading-none">Participants</span>
             </button>
-            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-gray-300 hidden md:flex">
-                <i class="fa-regular fa-comment-dots text-lg mb-1"></i>
-                <span class="text-[10px]">Chat</span>
+            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300 hidden md:flex">
+                <i class="fa-regular fa-comment-dots text-xl mb-1"></i>
+                <span class="text-[11px] font-medium leading-none">Chat</span>
             </button>
-            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-green-500 hover:bg-green-500/10 hidden md:flex">
-                <i class="fa-solid fa-arrow-up-from-bracket text-lg mb-1"></i>
-                <span class="text-[10px]">Share Screen</span>
+            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-green-500 hover:bg-green-500/10 hidden sm:flex">
+                <i class="fa-solid fa-arrow-up-from-bracket text-lg sm:text-xl mb-1"></i>
+                <span class="text-[9px] sm:text-[11px] font-medium leading-none">Share</span>
             </button>
-            <button onclick="toggleSetupOverlay()" class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-blue-400 hover:bg-blue-500/10">
-                <i class="fa-solid fa-qrcode text-lg mb-1"></i>
-                <span class="text-[10px]">Codes</span>
+            <button onclick="toggleSetupOverlay()" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-blue-400 hover:bg-blue-500/10">
+                <i class="fa-solid fa-qrcode text-base sm:text-xl mb-1"></i>
+                <span class="text-[9px] sm:text-[11px] font-medium leading-none">Codes</span>
             </button>
         </div>
 
-        <!-- Right Controls (Leave) -->
         <div>
-            <button onclick="endCall()" class="bg-[#ff4d4f] hover:bg-red-600 text-white font-semibold text-sm px-4 py-2 rounded-lg transition duration-200">
+            <button onclick="endCall()" class="bg-[#ff4d4f] hover:bg-red-600 text-white font-semibold text-[11px] sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg transition duration-200">
                 Leave
             </button>
         </div>
     </footer>
 
     <!-- Status Messages (Toast) -->
-    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-[#1a1a1a] border border-[#333] text-white px-6 py-3 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 translate-y-4">
-        <p id="toastMessage" class="text-sm font-medium">Message</p>
+    <div id="toast" class="fixed top-16 sm:top-20 left-1/2 transform -translate-x-1/2 w-11/12 max-w-sm sm:w-auto text-center bg-[#1a1a1a] border border-[#333] text-white px-4 py-2 sm:px-6 sm:py-3 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 translate-y-4">
+        <p id="toastMessage" class="text-xs sm:text-sm font-medium">Message</p>
     </div>
 
     <script type="module">
-        // Import Trystero for decentralized WebTorrent signaling
         import { joinRoom as joinTrysteroRoom } from 'https://esm.sh/trystero@0.11.1/torrent';
 
-        const APP_NAMESPACE = 'zoom-clone-webtorrent-v1';
+        const APP_NAMESPACE = 'zoom-clone-webtorrent-v2';
         let room = null;
         let localStream;
         let remoteStream;
         let isAudioMuted = false;
         let isVideoStopped = false;
         let isConnected = false;
+        
+        let userName = "Guest";
+        let currentRoomId = '';
+        let sendNameAction;
 
-        // UI Elements
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const remoteAvatar = document.getElementById('remoteAvatar');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        const setupOverlay = document.getElementById('setupOverlay');
+        // Check URL for existing room code on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomParam = urlParams.get('room');
+            if (roomParam) {
+                document.getElementById('roomInput').value = roomParam;
+                switchTab('join');
+            }
+            // Add enter key support for name input
+            document.getElementById('userNameInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') startMedia();
+            });
+        });
 
-        // Step 1: Initialize Local Media
+        // Step 1: Initialize Local Media & Name
         async function startMedia() {
+            const nameInput = document.getElementById('userNameInput').value.trim();
+            if (!nameInput) {
+                showToast("Please enter your name to join.", true);
+                document.getElementById('userNameInput').focus();
+                return;
+            }
+            userName = nameInput;
+            document.getElementById('localNameLabel').innerText = userName + " (You)";
+
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user" }, 
+                    audio: true 
+                });
+                document.getElementById('localVideo').srcObject = localStream;
                 
                 document.getElementById('step1Panel').classList.add('hidden');
                 document.getElementById('connectionPanel').classList.remove('hidden');
+
+                // Auto join if URL had a room code
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('room')) {
+                    joinRoom();
+                }
                 
             } catch (error) {
-                console.error("Error accessing media devices.", error);
+                console.error("Error accessing media:", error);
                 const errEl = document.getElementById('mediaError');
                 errEl.innerText = "Camera/Microphone access denied. Please check browser permissions.";
                 errEl.classList.remove('hidden');
             }
         }
 
-        // Setup Decentralized Room via WebTorrent Trackers
+        // Setup Decentralized Room
         function initDecentralizedRoom(roomId) {
-            statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]';
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            statusDot.className = 'w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]';
             statusText.innerText = 'Searching Trackers...';
 
-            // Connects to public WebTorrent trackers to find the other peer
             room = joinTrysteroRoom({ appId: APP_NAMESPACE }, roomId);
+            
+            // Setup messaging channel to exchange names
+            const [sendName, getName] = room.makeAction('name');
+            sendNameAction = sendName;
 
             room.onPeerJoin(peerId => {
-                console.log('Peer found on torrent network:', peerId);
                 showToast("Peer discovered! Establishing secure connection...");
+                if (localStream) room.addStream(localStream, peerId);
                 
-                if (localStream) {
-                    room.addStream(localStream, peerId);
-                }
+                // Send our name to the new peer after a tiny delay
+                setTimeout(() => sendNameAction(userName, peerId), 500);
+            });
+
+            // Listen for remote peer's name
+            getName((name, peerId) => {
+                document.getElementById('remoteNameDisplay').innerText = name;
+                document.getElementById('remoteAvatarName').innerText = name + " is connecting...";
             });
 
             room.onPeerStream((stream, peerId) => {
-                console.log('Receiving video stream from:', peerId);
                 remoteStream = stream;
-                remoteVideo.srcObject = remoteStream;
+                document.getElementById('remoteVideo').srcObject = remoteStream;
                 isConnected = true;
                 
-                // Update UI for connection success
-                remoteAvatar.style.display = 'none';
-                remoteVideo.style.zIndex = '1';
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
-                statusText.innerText = 'Connected';
+                // Update UI
+                document.getElementById('remoteAvatar').style.display = 'none';
+                document.getElementById('remoteVideo').style.zIndex = '1';
+                document.getElementById('remoteNameLabelContainer').classList.remove('hidden');
                 
-                setupOverlay.classList.add('hidden');
-                showToast("Meeting connected securely via WebTorrent!");
+                statusDot.className = 'w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
+                statusText.innerText = 'Connected';
+                document.getElementById('setupOverlay').classList.add('hidden');
+                showToast("Meeting connected securely!");
             });
 
             room.onPeerLeave(peerId => {
-                console.log('Peer left:', peerId);
-                remoteAvatar.style.display = 'flex';
-                remoteVideo.style.zIndex = '-1';
-                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]';
+                document.getElementById('remoteAvatar').style.display = 'flex';
+                document.getElementById('remoteVideo').style.zIndex = '-1';
+                document.getElementById('remoteNameLabelContainer').classList.add('hidden');
+                document.getElementById('remoteAvatarName').innerText = "Waiting for participant...";
+                document.getElementById('remoteNameDisplay').innerText = "Participant";
+                
+                statusDot.className = 'w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]';
                 statusText.innerText = 'Disconnected';
                 isConnected = false;
                 showToast("Participant disconnected", true);
@@ -263,19 +321,18 @@
 
         // HOST FLOW: Generate Code
         function createRoom() {
-            const btn = document.getElementById('createRoomBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Connecting to Trackers...';
-            btn.disabled = true;
-
             const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            currentRoomId = roomId;
+            
+            // Update URL to make it shareable
+            window.history.pushState({}, '', '?room=' + roomId);
             
             document.getElementById('roomIdDisplay').innerText = roomId;
-            document.getElementById('copyRoomBtn').classList.remove('hidden');
+            document.getElementById('preGenerateState').classList.add('hidden');
+            document.getElementById('postGenerateState').classList.remove('hidden');
             
             initDecentralizedRoom(roomId);
-            
-            btn.innerHTML = '<i class="fa-solid fa-satellite-dish mr-2"></i> Waiting for guest...';
-            showToast("Listening on decentralized network...");
+            showToast("Listening on network...");
         }
 
         // JOIN FLOW: Enter Code
@@ -285,12 +342,46 @@
                 showToast("Please enter a valid 6-character code.", true);
                 return;
             }
+            currentRoomId = roomId;
+            
+            // Update URL for consistency
+            window.history.pushState({}, '', '?room=' + roomId);
 
             const btn = document.getElementById('joinRoomBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Searching Trackers...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Searching...';
             btn.disabled = true;
 
             initDecentralizedRoom(roomId);
+        }
+
+        // Share Functions
+        function copyRoomId() {
+            copyTextSecurely(currentRoomId, "Meeting Code copied!", 'copyRoomBtn', '<i class="fa-solid fa-copy mr-2"></i>Copy Code');
+        }
+
+        function copyInviteLink() {
+            const link = window.location.origin + window.location.pathname + '?room=' + currentRoomId;
+            copyTextSecurely(link, "Invite Link copied!", 'copyLinkBtn', '<i class="fa-solid fa-link mr-2"></i>Copy Link');
+        }
+
+        function copyTextSecurely(text, successMsg, btnId, originalHtml) {
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast(successMsg);
+                
+                const btn = document.getElementById(btnId);
+                btn.innerHTML = '<i class="fa-solid fa-check mr-2 text-green-400"></i>Copied';
+                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+            } catch (err) {
+                showToast("Failed to copy", true);
+            } finally {
+                document.body.removeChild(tempInput);
+            }
         }
 
         // Media Controls
@@ -305,11 +396,11 @@
             
             if (isAudioMuted) {
                 btn.classList.add('zoom-btn-danger');
-                icon.className = 'fa-solid fa-microphone-slash text-lg mb-1';
+                icon.className = 'fa-solid fa-microphone-slash text-base sm:text-xl mb-1';
                 text.innerText = 'Unmute';
             } else {
                 btn.classList.remove('zoom-btn-danger');
-                icon.className = 'fa-solid fa-microphone text-lg mb-1';
+                icon.className = 'fa-solid fa-microphone text-base sm:text-xl mb-1';
                 text.innerText = 'Mute';
             }
         }
@@ -325,20 +416,20 @@
             
             if (isVideoStopped) {
                 btn.classList.add('zoom-btn-danger');
-                icon.className = 'fa-solid fa-video-slash text-lg mb-1';
+                icon.className = 'fa-solid fa-video-slash text-base sm:text-xl mb-1';
                 text.innerText = 'Start Video';
             } else {
                 btn.classList.remove('zoom-btn-danger');
-                icon.className = 'fa-solid fa-video text-lg mb-1';
+                icon.className = 'fa-solid fa-video text-base sm:text-xl mb-1';
                 text.innerText = 'Stop Video';
             }
         }
 
         function toggleSetupOverlay() {
+            const setupOverlay = document.getElementById('setupOverlay');
             if (setupOverlay.classList.contains('hidden')) {
                 setupOverlay.classList.remove('hidden');
             } else {
-                // Only allow closing if we are actually connected
                 if(isConnected){
                     setupOverlay.classList.add('hidden');
                 } else {
@@ -348,62 +439,9 @@
         }
 
         function endCall() {
-            if(room) {
-                room.leave();
-            }
-            if(localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            window.location.reload();
-        }
-
-        // Utilities
-        function copyRoomId() {
-            const roomId = document.getElementById('roomIdDisplay').innerText;
-            
-            // Create a temporary textarea to copy from (works securely in iframes)
-            const tempInput = document.createElement('textarea');
-            tempInput.value = roomId;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            
-            try {
-                document.execCommand('copy');
-                showToast("Meeting Code copied!");
-                
-                // Temporarily change the icon to a checkmark
-                const btn = document.getElementById('copyRoomBtn');
-                const originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i>';
-                setTimeout(() => {
-                    btn.innerHTML = originalHtml;
-                }, 2000);
-            } catch (err) {
-                showToast("Failed to copy", true);
-            } finally {
-                document.body.removeChild(tempInput);
-            }
-        }
-
-        function copyToClipboard(inputId, btnId) {
-            const input = document.getElementById(inputId);
-            input.select();
-            input.setSelectionRange(0, 99999);
-            
-            try {
-                document.execCommand('copy');
-                const btn = document.getElementById(btnId);
-                const originalText = btn.innerText;
-                btn.innerText = "Copied";
-                btn.classList.replace('bg-gray-700', 'bg-green-600');
-                
-                setTimeout(() => {
-                    btn.innerText = originalText;
-                    btn.classList.replace('bg-green-600', 'bg-gray-700');
-                }, 2000);
-            } catch (err) {
-                showToast("Copy failed", true);
-            }
+            if(room) room.leave();
+            if(localStream) localStream.getTracks().forEach(track => track.stop());
+            window.location.href = window.location.pathname; // Reload without query params
         }
 
         function showToast(message, isError = false) {
@@ -413,14 +451,10 @@
             toastMessage.innerText = message;
             toast.classList.remove('opacity-0', 'translate-y-4');
             
-            if (isError) {
-                toast.classList.add('border-red-500');
-            } else {
-                toast.classList.remove('border-red-500');
-            }
+            if (isError) toast.classList.add('border-red-500');
+            else toast.classList.remove('border-red-500');
 
             if(window.toastTimeout) clearTimeout(window.toastTimeout);
-            
             window.toastTimeout = setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-4');
             }, 3000);
@@ -449,15 +483,16 @@
             }
         }
 
-        // Expose functions to window because this script is a module
+        // Expose functions to window
         window.startMedia = startMedia;
         window.createRoom = createRoom;
         window.joinRoom = joinRoom;
+        window.copyRoomId = copyRoomId;
+        window.copyInviteLink = copyInviteLink;
         window.toggleAudio = toggleAudio;
         window.toggleVideo = toggleVideo;
         window.toggleSetupOverlay = toggleSetupOverlay;
         window.endCall = endCall;
-        window.copyRoomId = copyRoomId;
         window.switchTab = switchTab;
     </script>
 </body>
