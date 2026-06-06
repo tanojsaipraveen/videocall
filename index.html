@@ -182,7 +182,7 @@
 
     <script type="module">
         // Import Trystero for decentralized WebTorrent signaling
-        import { joinRoom } from 'https://esm.sh/trystero@0.11.1/torrent';
+        import { joinRoom as joinTrysteroRoom } from 'https://esm.sh/trystero@0.11.1/torrent';
 
         const APP_NAMESPACE = 'zoom-clone-webtorrent-v1';
         let room = null;
@@ -190,6 +190,7 @@
         let remoteStream;
         let isAudioMuted = false;
         let isVideoStopped = false;
+        let isConnected = false;
 
         // UI Elements
         const localVideo = document.getElementById('localVideo');
@@ -222,7 +223,7 @@
             statusText.innerText = 'Searching Trackers...';
 
             // Connects to public WebTorrent trackers to find the other peer
-            room = joinRoom({ appId: APP_NAMESPACE }, roomId);
+            room = joinTrysteroRoom({ appId: APP_NAMESPACE }, roomId);
 
             room.onPeerJoin(peerId => {
                 console.log('Peer found on torrent network:', peerId);
@@ -237,6 +238,7 @@
                 console.log('Receiving video stream from:', peerId);
                 remoteStream = stream;
                 remoteVideo.srcObject = remoteStream;
+                isConnected = true;
                 
                 // Update UI for connection success
                 remoteAvatar.style.display = 'none';
@@ -254,6 +256,7 @@
                 remoteVideo.style.zIndex = '-1';
                 statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]';
                 statusText.innerText = 'Disconnected';
+                isConnected = false;
                 showToast("Participant disconnected", true);
             });
         }
@@ -336,7 +339,7 @@
                 setupOverlay.classList.remove('hidden');
             } else {
                 // Only allow closing if we are actually connected
-                if(peerConnection && peerConnection.connectionState === 'connected'){
+                if(isConnected){
                     setupOverlay.classList.add('hidden');
                 } else {
                     showToast("Please connect to a meeting first");
@@ -345,8 +348,8 @@
         }
 
         function endCall() {
-            if(peerConnection) {
-                peerConnection.close();
+            if(room) {
+                room.leave();
             }
             if(localStream) {
                 localStream.getTracks().forEach(track => track.stop());
@@ -355,6 +358,33 @@
         }
 
         // Utilities
+        function copyRoomId() {
+            const roomId = document.getElementById('roomIdDisplay').innerText;
+            
+            // Create a temporary textarea to copy from (works securely in iframes)
+            const tempInput = document.createElement('textarea');
+            tempInput.value = roomId;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast("Meeting Code copied!");
+                
+                // Temporarily change the icon to a checkmark
+                const btn = document.getElementById('copyRoomBtn');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check text-green-400"></i>';
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+            } catch (err) {
+                showToast("Failed to copy", true);
+            } finally {
+                document.body.removeChild(tempInput);
+            }
+        }
+
         function copyToClipboard(inputId, btnId) {
             const input = document.getElementById(inputId);
             input.select();
