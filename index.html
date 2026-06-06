@@ -78,37 +78,16 @@
                     <!-- Host Panel -->
                     <div id="panel-host" class="p-6 md:p-8">
                         <div class="space-y-6">
-                            <!-- Host Step A -->
-                            <div class="bg-[#242424] p-5 rounded-lg border border-gray-700">
-                                <div class="flex items-center space-x-3 mb-2">
-                                    <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-bold">1</div>
-                                    <h3 class="font-semibold text-gray-200">Invite Participants</h3>
+                            <div class="bg-[#242424] p-5 rounded-lg border border-gray-700 text-center">
+                                <h3 class="font-semibold text-gray-200 mb-2">Your Meeting Code</h3>
+                                <div class="flex justify-center items-center space-x-3 mb-4">
+                                    <span id="roomIdDisplay" class="text-3xl font-mono text-[#0b5cff] tracking-widest font-bold">------</span>
+                                    <button onclick="copyRoomId()" id="copyRoomBtn" class="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded transition hidden"><i class="fa-solid fa-copy"></i></button>
                                 </div>
-                                <p class="text-sm text-gray-400 mb-4 pl-9">Generate an invitation code and send it to your guest.</p>
-                                <div class="pl-9 space-y-3">
-                                    <button id="createOfferBtn" onclick="createOffer()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 text-sm shadow-md">
-                                        Generate Invite Code
-                                    </button>
-                                    <div class="relative">
-                                        <textarea id="offerOutput" readonly class="w-full h-20 bg-black border border-gray-700 rounded-lg p-3 text-xs text-blue-400 focus:outline-none focus:border-blue-500 resize-none font-mono opacity-50" placeholder="Code will appear here..."></textarea>
-                                        <button onclick="copyToClipboard('offerOutput', 'copyOfferBtn')" id="copyOfferBtn" class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-xs px-3 py-1.5 rounded transition hidden font-medium">Copy</button>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Host Step B -->
-                            <div class="bg-[#242424] p-5 rounded-lg border border-gray-700 opacity-40 transition-opacity duration-300" id="hostStepB">
-                                 <div class="flex items-center space-x-3 mb-2">
-                                    <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 text-xs font-bold">2</div>
-                                    <h3 class="font-semibold text-gray-200">Connect to Guest</h3>
-                                </div>
-                                <p class="text-sm text-gray-400 mb-4 pl-9">Paste the response code your guest sends back to you.</p>
-                                <div class="pl-9 space-y-3">
-                                    <textarea id="answerInput" class="w-full h-20 bg-black border border-gray-700 rounded-lg p-3 text-xs text-green-400 focus:outline-none focus:border-blue-500 resize-none font-mono" placeholder="Paste response code here..."></textarea>
-                                    <button id="connectBtn" onclick="connectAsHost()" class="w-full bg-[#0b5cff] hover:bg-blue-600 px-4 py-3 rounded-lg font-bold transition duration-200 cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-500" disabled>
-                                        Admit & Connect
-                                    </button>
-                                </div>
+                                <p class="text-sm text-gray-400 mb-4">Share this code with your guest. Decentralized signaling will connect you automatically.</p>
+                                <button id="createRoomBtn" onclick="createRoom()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 shadow-md w-full">
+                                    Generate Meeting Code
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -116,31 +95,13 @@
                     <!-- Join Panel -->
                     <div id="panel-join" class="p-6 md:p-8 hidden">
                         <div class="space-y-6">
-                            <!-- Join Step A -->
                             <div class="bg-[#242424] p-5 rounded-lg border border-gray-700">
-                                <div class="flex items-center space-x-3 mb-2">
-                                    <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-bold">1</div>
-                                    <h3 class="font-semibold text-gray-200">Enter Invite Code</h3>
-                                </div>
-                                <p class="text-sm text-gray-400 mb-4 pl-9">Paste the code the host sent you.</p>
-                                <div class="pl-9 space-y-3">
-                                    <textarea id="offerInput" class="w-full h-20 bg-black border border-gray-700 rounded-lg p-3 text-xs text-blue-400 focus:outline-none focus:border-blue-500 resize-none font-mono" placeholder="Paste invite code here..."></textarea>
-                                    <button id="createAnswerBtn" onclick="createAnswer()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 text-sm shadow-md">
-                                        Generate Response
+                                <h3 class="font-semibold text-gray-200 mb-4 text-center">Enter Meeting Code</h3>
+                                <div class="space-y-4">
+                                    <input type="text" id="roomInput" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-center text-xl tracking-widest text-blue-400 focus:outline-none focus:border-blue-500 font-mono uppercase" placeholder="e.g. XYZ123" maxlength="6">
+                                    <button id="joinRoomBtn" onclick="joinRoom()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md">
+                                        Join Meeting
                                     </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Join Step B -->
-                             <div class="bg-[#242424] p-5 rounded-lg border border-gray-700 opacity-40 transition-opacity duration-300" id="joinStepB">
-                                 <div class="flex items-center space-x-3 mb-2">
-                                    <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 text-xs font-bold">2</div>
-                                    <h3 class="font-semibold text-gray-200">Send Response</h3>
-                                </div>
-                                <p class="text-sm text-gray-400 mb-4 pl-9">Copy this code and send it back to the host to be admitted.</p>
-                                <div class="pl-9 relative">
-                                    <textarea id="answerOutput" readonly class="w-full h-20 bg-black border border-gray-700 rounded-lg p-3 text-xs text-green-400 focus:outline-none focus:border-blue-500 resize-none font-mono opacity-50" placeholder="Response code will appear here..."></textarea>
-                                    <button onclick="copyToClipboard('answerOutput', 'copyAnswerBtn')" id="copyAnswerBtn" class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-xs px-3 py-1.5 rounded transition hidden font-medium">Copy</button>
                                 </div>
                             </div>
                         </div>
@@ -219,15 +180,12 @@
         <p id="toastMessage" class="text-sm font-medium">Message</p>
     </div>
 
-    <script>
-        // Use free public Google STUN servers. 
-        const configuration = {
-            iceServers: [
-                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
-            ]
-        };
+    <script type="module">
+        // Import Trystero for decentralized WebTorrent signaling
+        import { joinRoom } from 'https://esm.sh/trystero@0.11.1/torrent';
 
-        let peerConnection;
+        const APP_NAMESPACE = 'zoom-clone-webtorrent-v1';
+        let room = null;
         let localStream;
         let remoteStream;
         let isAudioMuted = false;
@@ -247,11 +205,9 @@
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 localVideo.srcObject = localStream;
                 
-                // Transition UI
                 document.getElementById('step1Panel').classList.add('hidden');
                 document.getElementById('connectionPanel').classList.remove('hidden');
                 
-                initPeerConnection();
             } catch (error) {
                 console.error("Error accessing media devices.", error);
                 const errEl = document.getElementById('mediaError');
@@ -260,159 +216,78 @@
             }
         }
 
-        // Initialize WebRTC
-        function initPeerConnection() {
-            peerConnection = new RTCPeerConnection(configuration);
-            remoteStream = new MediaStream();
-            remoteVideo.srcObject = remoteStream;
+        // Setup Decentralized Room via WebTorrent Trackers
+        function initDecentralizedRoom(roomId) {
+            statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]';
+            statusText.innerText = 'Searching Trackers...';
 
-            // Add local tracks to the connection
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
+            // Connects to public WebTorrent trackers to find the other peer
+            room = joinRoom({ appId: APP_NAMESPACE }, roomId);
+
+            room.onPeerJoin(peerId => {
+                console.log('Peer found on torrent network:', peerId);
+                showToast("Peer discovered! Establishing secure connection...");
+                
+                if (localStream) {
+                    room.addStream(localStream, peerId);
+                }
             });
 
-            // Listen for remote tracks arriving
-            peerConnection.ontrack = (event) => {
-                event.streams[0].getTracks().forEach(track => {
-                    remoteStream.addTrack(track);
-                });
+            room.onPeerStream((stream, peerId) => {
+                console.log('Receiving video stream from:', peerId);
+                remoteStream = stream;
+                remoteVideo.srcObject = remoteStream;
                 
-                // Hide avatar and show video when track arrives
+                // Update UI for connection success
                 remoteAvatar.style.display = 'none';
                 remoteVideo.style.zIndex = '1';
-            };
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
+                statusText.innerText = 'Connected';
+                
+                setupOverlay.classList.add('hidden');
+                showToast("Meeting connected securely via WebTorrent!");
+            });
 
-            // Monitor connection state for UI updates
-            peerConnection.onconnectionstatechange = () => {
-                if (peerConnection.connectionState === 'connected') {
-                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
-                    statusText.innerText = 'Connected';
-                    
-                    // Hide setup overlay when connected
-                    setupOverlay.classList.add('hidden');
-                    showToast("Meeting connected securely");
-                    
-                } else if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
-                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]';
-                    statusText.innerText = 'Disconnected';
-                    remoteAvatar.style.display = 'flex';
-                    remoteVideo.style.zIndex = '-1';
-                    showToast("Participant disconnected", true);
-                } else if (peerConnection.connectionState === 'connecting') {
-                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]';
-                    statusText.innerText = 'Connecting...';
-                }
-            };
-        }
-
-        // Wait for ICE candidates to finish gathering
-        function waitForIceGatheringComplete() {
-            return new Promise((resolve) => {
-                if (peerConnection.iceGatheringState === 'complete') {
-                    resolve();
-                } else {
-                    const checkState = () => {
-                        if (peerConnection.iceGatheringState === 'complete') {
-                            peerConnection.removeEventListener('icegatheringstatechange', checkState);
-                            resolve();
-                        }
-                    };
-                    peerConnection.addEventListener('icegatheringstatechange', checkState);
-                    
-                    // Fallback: Resolve after 3 seconds
-                    setTimeout(() => {
-                        peerConnection.removeEventListener('icegatheringstatechange', checkState);
-                        resolve();
-                    }, 3000);
-                }
+            room.onPeerLeave(peerId => {
+                console.log('Peer left:', peerId);
+                remoteAvatar.style.display = 'flex';
+                remoteVideo.style.zIndex = '-1';
+                statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]';
+                statusText.innerText = 'Disconnected';
+                showToast("Participant disconnected", true);
             });
         }
 
-        // HOST FLOW: Create Offer
-        async function createOffer() {
-            try {
-                const btn = document.getElementById('createOfferBtn');
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generating...';
-                btn.disabled = true;
-                btn.classList.add('opacity-70', 'cursor-not-allowed');
+        // HOST FLOW: Generate Code
+        function createRoom() {
+            const btn = document.getElementById('createRoomBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Connecting to Trackers...';
+            btn.disabled = true;
 
-                const offer = await peerConnection.createOffer();
-                await peerConnection.setLocalDescription(offer);
-                
-                await waitForIceGatheringComplete();
-
-                const offerToken = btoa(JSON.stringify(peerConnection.localDescription));
-                
-                const outputArea = document.getElementById('offerOutput');
-                outputArea.value = offerToken;
-                outputArea.classList.remove('opacity-50');
-                document.getElementById('copyOfferBtn').classList.remove('hidden');
-                
-                btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i> Code Ready';
-                document.getElementById('hostStepB').classList.remove('opacity-40');
-                document.getElementById('connectBtn').disabled = false;
-                
-            } catch (error) {
-                console.error("Error creating offer:", error);
-                showToast("Error creating offer.", true);
-            }
+            const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            document.getElementById('roomIdDisplay').innerText = roomId;
+            document.getElementById('copyRoomBtn').classList.remove('hidden');
+            
+            initDecentralizedRoom(roomId);
+            
+            btn.innerHTML = '<i class="fa-solid fa-satellite-dish mr-2"></i> Waiting for guest...';
+            showToast("Listening on decentralized network...");
         }
 
-        // HOST FLOW: Consume Answer
-        async function connectAsHost() {
-            try {
-                const answerToken = document.getElementById('answerInput').value.trim();
-                if (!answerToken) return;
-
-                const answer = JSON.parse(atob(answerToken));
-                await peerConnection.setRemoteDescription(answer);
-                
-                const btn = document.getElementById('connectBtn');
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Connecting...';
-                
-            } catch (error) {
-                console.error("Error connecting:", error);
-                showToast("Invalid Response Code.", true);
+        // JOIN FLOW: Enter Code
+        function joinRoom() {
+            const roomId = document.getElementById('roomInput').value.trim().toUpperCase();
+            if (!roomId || roomId.length < 6) {
+                showToast("Please enter a valid 6-character code.", true);
+                return;
             }
-        }
 
-        // JOIN FLOW: Consume Offer and Create Answer
-        async function createAnswer() {
-            try {
-                const offerToken = document.getElementById('offerInput').value.trim();
-                if (!offerToken) return;
+            const btn = document.getElementById('joinRoomBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Searching Trackers...';
+            btn.disabled = true;
 
-                const btn = document.getElementById('createAnswerBtn');
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Connecting...';
-                btn.disabled = true;
-                btn.classList.add('opacity-70', 'cursor-not-allowed');
-
-                const offer = JSON.parse(atob(offerToken));
-                await peerConnection.setRemoteDescription(offer);
-
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                await waitForIceGatheringComplete();
-
-                const answerToken = btoa(JSON.stringify(peerConnection.localDescription));
-                
-                const outputArea = document.getElementById('answerOutput');
-                outputArea.value = answerToken;
-                outputArea.classList.remove('opacity-50');
-                document.getElementById('copyAnswerBtn').classList.remove('hidden');
-
-                btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i> Ready to Connect';
-                document.getElementById('joinStepB').classList.remove('opacity-40');
-
-            } catch (error) {
-                console.error("Error creating answer:", error);
-                const btn = document.getElementById('createAnswerBtn');
-                btn.innerText = "Generate Response";
-                btn.disabled = false;
-                btn.classList.remove('opacity-70', 'cursor-not-allowed');
-                showToast("Invalid Invite Code.", true);
-            }
+            initDecentralizedRoom(roomId);
         }
 
         // Media Controls
@@ -543,6 +418,17 @@
                 tabHost.classList.add('text-gray-400');
             }
         }
+
+        // Expose functions to window because this script is a module
+        window.startMedia = startMedia;
+        window.createRoom = createRoom;
+        window.joinRoom = joinRoom;
+        window.toggleAudio = toggleAudio;
+        window.toggleVideo = toggleVideo;
+        window.toggleSetupOverlay = toggleSetupOverlay;
+        window.endCall = endCall;
+        window.copyRoomId = copyRoomId;
+        window.switchTab = switchTab;
     </script>
 </body>
 </html>
