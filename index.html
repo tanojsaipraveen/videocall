@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serverless P2P Video Call</title>
+    <!-- Using Tailwind CSS for modern, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom scrollbar for textareas */
+        textarea::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background-color: #4B5563; border-radius: 10px; }
+        .tab-active { border-bottom: 2px solid #0b5cff; color: #0b5cff; }
+        
+        /* Zoom-like specific styles */
+        body { background-color: #242424; }
+        .zoom-control-bar { background-color: #1a1a1a; }
+        .zoom-btn { transition: all 0.2s ease; }
+        .zoom-btn:hover { background-color: #2a2a2a; }
+        .zoom-btn-active { color: #0b5cff; }
+        .zoom-btn-danger { color: #ff4d4f; }
+        .zoom-btn-danger:hover { background-color: #ff4d4f; color: white; }
+    </style>
+</head>
+<body class="text-white min-h-screen font-sans selection:bg-blue-500 selection:text-white flex flex-col h-screen overflow-hidden">
+
+    <!-- Top Header (Info) -->
+    <header class="absolute top-0 w-full p-4 flex justify-between items-center z-10 pointer-events-none">
+        <div class="flex items-center space-x-2 bg-black/50 px-3 py-1.5 rounded-md backdrop-blur-sm pointer-events-auto">
+            <i class="fa-solid fa-shield-halved text-green-500 text-xs"></i>
+            <span class="text-xs font-semibold tracking-wide">P2P Encrypted</span>
+        </div>
+        <div id="connectionStatus" class="flex items-center space-x-2 bg-black/50 px-3 py-1.5 rounded-md backdrop-blur-sm pointer-events-auto">
+            <span id="statusDot" class="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+            <span id="statusText" class="text-xs font-semibold">Disconnected</span>
+        </div>
+    </header>
+
+    <!-- Main Video Area -->
+    <main class="flex-grow relative flex items-center justify-center p-4 pt-16 pb-24 bg-[#242424]">
+        
+        <!-- Setup/Connection Overlay (Hidden when connected) -->
+        <div id="setupOverlay" class="absolute inset-0 z-20 flex items-center justify-center bg-[#242424]/95 backdrop-blur-md overflow-y-auto p-4">
+            <div class="max-w-2xl w-full">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-white mb-2">Join Meeting</h1>
+                    <p class="text-gray-400">Serverless peer-to-peer connection</p>
+                </div>
+
+                <!-- Step 1: Initialize Camera -->
+                <div id="step1Panel" class="bg-[#1a1a1a] p-8 rounded-xl border border-gray-800 shadow-2xl text-center">
+                    <div class="w-20 h-20 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <i class="fa-solid fa-video text-blue-500 text-3xl"></i>
+                    </div>
+                    <h2 class="text-xl font-semibold mb-4 text-gray-200">Start Audio/Video</h2>
+                    <p class="text-gray-400 mb-6 text-sm">Allow access to your camera and microphone to begin the connection process.</p>
+                    <button id="startBtn" onclick="startMedia()" class="bg-[#0b5cff] hover:bg-blue-600 text-white px-8 py-3 rounded-lg font-medium transition duration-200 shadow-lg w-full md:w-auto">
+                        Allow Access
+                    </button>
+                    <p id="mediaError" class="text-red-400 mt-4 text-sm hidden"></p>
+                </div>
+
+                <!-- Step 2: Connection Panels -->
+                <div id="connectionPanel" class="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-2xl hidden">
+                    <!-- Tabs -->
+                    <div class="flex border-b border-gray-800">
+                        <button onclick="switchTab('host')" id="tab-host" class="flex-1 py-4 text-center font-medium hover:bg-gray-800 transition tab-active">
+                            New Meeting (Host)
+                        </button>
+                        <button onclick="switchTab('join')" id="tab-join" class="flex-1 py-4 text-center font-medium hover:bg-gray-800 transition text-gray-400">
+                            Join Meeting (Guest)
+                        </button>
+                    </div>
+
+                    <!-- Host Panel -->
+                    <div id="panel-host" class="p-6 md:p-8">
+                        <div class="space-y-6">
+                            <!-- Host Step A -->
+                            <div class="bg-[#242424] p-5 rounded-lg border border-gray-700">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-bold">1</div>
+                                    <h3 class="font-semibold text-gray-200">Invite Participants</h3>
+                                </div>
+                                <p class="text-sm text-gray-400 mb-4 pl-9">Generate an invitation code and send it to your guest.</p>
+                                <div class="pl-9 space-y-3">
+                                    <button id="createOfferBtn" onclick="createOffer()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 text-sm shadow-md">
+                                        Generate Invite Code
+                                    </button>
+                                    <div class="relative">
+                                        <textarea id="offerOutput" readonly class="w-full h-20 bg-black border border-gray-700 rounded-lg p-3 text-xs text-blue-400 focus:outline-none focus:border-blue-500 resize-none font-mono opacity-50" placeholder="Code will appear here..."></textarea>
+                                        <button onclick="copyToClipboard('offerOutput', 'copyOfferBtn')" id="copyOfferBtn" class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-xs px-3 py-1.5 rounded transition hidden font-medium">Copy</button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Host Step B -->
+                            <div class="bg-[#242424] p-5 rounded-lg border border-gray-700 opacity-40 transition-opacity duration-300" id="hostStepB">
+                                 <div class="flex items-center space-x-3 mb-2">
+                                    <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 text-xs font-bold">2</div>
+                                    <h3 class="font-semibold text-gray-200">Connect to Guest</h3>
+                                </div>
+                                <p class="text-sm text-gray-400 mb-4 pl-9">Paste the response code your guest sends back to you.</p>
+                                <div class="pl-9 space-y-3">
+                                    <textarea id="answerInput" class="w-full h-20 bg-black border border-gray-700 rounded-lg p-3 text-xs text-green-400 focus:outline-none focus:border-blue-500 resize-none font-mono" placeholder="Paste response code here..."></textarea>
+                                    <button id="connectBtn" onclick="connectAsHost()" class="w-full bg-[#0b5cff] hover:bg-blue-600 px-4 py-3 rounded-lg font-bold transition duration-200 cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-500" disabled>
+                                        Admit & Connect
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Join Panel -->
+                    <div id="panel-join" class="p-6 md:p-8 hidden">
+                        <div class="space-y-6">
+                            <!-- Join Step A -->
+                            <div class="bg-[#242424] p-5 rounded-lg border border-gray-700">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-bold">1</div>
+                                    <h3 class="font-semibold text-gray-200">Enter Invite Code</h3>
+                                </div>
+                                <p class="text-sm text-gray-400 mb-4 pl-9">Paste the code the host sent you.</p>
+                                <div class="pl-9 space-y-3">
+                                    <textarea id="offerInput" class="w-full h-20 bg-black border border-gray-700 rounded-lg p-3 text-xs text-blue-400 focus:outline-none focus:border-blue-500 resize-none font-mono" placeholder="Paste invite code here..."></textarea>
+                                    <button id="createAnswerBtn" onclick="createAnswer()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 text-sm shadow-md">
+                                        Generate Response
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Join Step B -->
+                             <div class="bg-[#242424] p-5 rounded-lg border border-gray-700 opacity-40 transition-opacity duration-300" id="joinStepB">
+                                 <div class="flex items-center space-x-3 mb-2">
+                                    <div class="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 text-xs font-bold">2</div>
+                                    <h3 class="font-semibold text-gray-200">Send Response</h3>
+                                </div>
+                                <p class="text-sm text-gray-400 mb-4 pl-9">Copy this code and send it back to the host to be admitted.</p>
+                                <div class="pl-9 relative">
+                                    <textarea id="answerOutput" readonly class="w-full h-20 bg-black border border-gray-700 rounded-lg p-3 text-xs text-green-400 focus:outline-none focus:border-blue-500 resize-none font-mono opacity-50" placeholder="Response code will appear here..."></textarea>
+                                    <button onclick="copyToClipboard('answerOutput', 'copyAnswerBtn')" id="copyAnswerBtn" class="absolute top-2 right-2 bg-gray-700 hover:bg-gray-600 text-xs px-3 py-1.5 rounded transition hidden font-medium">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Elements (Zoom Style Layout) -->
+        <div class="w-full h-full relative flex items-center justify-center max-w-7xl mx-auto rounded-xl overflow-hidden">
+            <!-- Remote Video (Main Active Speaker) -->
+            <video id="remoteVideo" class="w-full h-full object-contain bg-black rounded-xl shadow-lg border border-[#333]" autoplay playsinline></video>
+            
+            <!-- Default Avatar for Remote (When no video) -->
+            <div id="remoteAvatar" class="absolute inset-0 flex flex-col items-center justify-center bg-[#242424] z-0">
+                <div class="w-32 h-32 bg-gray-700 rounded-full flex items-center justify-center mb-4 text-4xl text-gray-400">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <p class="text-gray-400 text-lg font-medium">Waiting for participant...</p>
+            </div>
+
+            <!-- Local Video (PiP / Floating Window) -->
+            <div class="absolute bottom-4 right-4 w-48 md:w-64 aspect-video bg-black rounded-lg overflow-hidden border-2 border-[#333] shadow-2xl z-10 hover:border-gray-500 transition-colors cursor-move" id="localVideoContainer">
+                <video id="localVideo" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline muted></video>
+                <div class="absolute bottom-1 left-2 bg-black/60 px-2 py-0.5 rounded text-[10px] backdrop-blur-sm text-gray-200">You</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Bottom Control Bar (Zoom Style) -->
+    <footer class="zoom-control-bar absolute bottom-0 w-full h-16 border-t border-[#333] flex items-center justify-between px-4 z-30">
+        
+        <!-- Left Controls (Audio/Video) -->
+        <div class="flex items-center space-x-1 md:space-x-2">
+            <button onclick="toggleAudio()" id="micBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-gray-300">
+                <i class="fa-solid fa-microphone text-lg mb-1" id="micIcon"></i>
+                <span class="text-[10px]">Mute</span>
+            </button>
+            <button onclick="toggleVideo()" id="camBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-gray-300">
+                <i class="fa-solid fa-video text-lg mb-1" id="camIcon"></i>
+                <span class="text-[10px]">Stop Video</span>
+            </button>
+        </div>
+
+        <!-- Center Controls -->
+        <div class="flex items-center space-x-1 md:space-x-2">
+            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-gray-300 hidden md:flex">
+                <i class="fa-solid fa-user-group text-lg mb-1"></i>
+                <span class="text-[10px]">Participants</span>
+            </button>
+            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-gray-300 hidden md:flex">
+                <i class="fa-regular fa-comment-dots text-lg mb-1"></i>
+                <span class="text-[10px]">Chat</span>
+            </button>
+            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-green-500 hover:bg-green-500/10 hidden md:flex">
+                <i class="fa-solid fa-arrow-up-from-bracket text-lg mb-1"></i>
+                <span class="text-[10px]">Share Screen</span>
+            </button>
+            <button onclick="toggleSetupOverlay()" class="zoom-btn flex flex-col items-center justify-center w-12 h-12 md:w-16 md:h-14 rounded-lg text-blue-400 hover:bg-blue-500/10">
+                <i class="fa-solid fa-qrcode text-lg mb-1"></i>
+                <span class="text-[10px]">Codes</span>
+            </button>
+        </div>
+
+        <!-- Right Controls (Leave) -->
+        <div>
+            <button onclick="endCall()" class="bg-[#ff4d4f] hover:bg-red-600 text-white font-semibold text-sm px-4 py-2 rounded-lg transition duration-200">
+                Leave
+            </button>
+        </div>
+    </footer>
+
+    <!-- Status Messages (Toast) -->
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-[#1a1a1a] border border-[#333] text-white px-6 py-3 rounded-full shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 translate-y-4">
+        <p id="toastMessage" class="text-sm font-medium">Message</p>
+    </div>
+
+    <script>
+        // Use free public Google STUN servers. 
+        const configuration = {
+            iceServers: [
+                { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] }
+            ]
+        };
+
+        let peerConnection;
+        let localStream;
+        let remoteStream;
+        let isAudioMuted = false;
+        let isVideoStopped = false;
+
+        // UI Elements
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const remoteAvatar = document.getElementById('remoteAvatar');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const setupOverlay = document.getElementById('setupOverlay');
+
+        // Step 1: Initialize Local Media
+        async function startMedia() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                localVideo.srcObject = localStream;
+                
+                // Transition UI
+                document.getElementById('step1Panel').classList.add('hidden');
+                document.getElementById('connectionPanel').classList.remove('hidden');
+                
+                initPeerConnection();
+            } catch (error) {
+                console.error("Error accessing media devices.", error);
+                const errEl = document.getElementById('mediaError');
+                errEl.innerText = "Camera/Microphone access denied. Please check browser permissions.";
+                errEl.classList.remove('hidden');
+            }
+        }
+
+        // Initialize WebRTC
+        function initPeerConnection() {
+            peerConnection = new RTCPeerConnection(configuration);
+            remoteStream = new MediaStream();
+            remoteVideo.srcObject = remoteStream;
+
+            // Add local tracks to the connection
+            localStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, localStream);
+            });
+
+            // Listen for remote tracks arriving
+            peerConnection.ontrack = (event) => {
+                event.streams[0].getTracks().forEach(track => {
+                    remoteStream.addTrack(track);
+                });
+                
+                // Hide avatar and show video when track arrives
+                remoteAvatar.style.display = 'none';
+                remoteVideo.style.zIndex = '1';
+            };
+
+            // Monitor connection state for UI updates
+            peerConnection.onconnectionstatechange = () => {
+                if (peerConnection.connectionState === 'connected') {
+                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
+                    statusText.innerText = 'Connected';
+                    
+                    // Hide setup overlay when connected
+                    setupOverlay.classList.add('hidden');
+                    showToast("Meeting connected securely");
+                    
+                } else if (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed') {
+                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]';
+                    statusText.innerText = 'Disconnected';
+                    remoteAvatar.style.display = 'flex';
+                    remoteVideo.style.zIndex = '-1';
+                    showToast("Participant disconnected", true);
+                } else if (peerConnection.connectionState === 'connecting') {
+                    statusDot.className = 'w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]';
+                    statusText.innerText = 'Connecting...';
+                }
+            };
+        }
+
+        // Wait for ICE candidates to finish gathering
+        function waitForIceGatheringComplete() {
+            return new Promise((resolve) => {
+                if (peerConnection.iceGatheringState === 'complete') {
+                    resolve();
+                } else {
+                    const checkState = () => {
+                        if (peerConnection.iceGatheringState === 'complete') {
+                            peerConnection.removeEventListener('icegatheringstatechange', checkState);
+                            resolve();
+                        }
+                    };
+                    peerConnection.addEventListener('icegatheringstatechange', checkState);
+                    
+                    // Fallback: Resolve after 3 seconds
+                    setTimeout(() => {
+                        peerConnection.removeEventListener('icegatheringstatechange', checkState);
+                        resolve();
+                    }, 3000);
+                }
+            });
+        }
+
+        // HOST FLOW: Create Offer
+        async function createOffer() {
+            try {
+                const btn = document.getElementById('createOfferBtn');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generating...';
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-not-allowed');
+
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                await waitForIceGatheringComplete();
+
+                const offerToken = btoa(JSON.stringify(peerConnection.localDescription));
+                
+                const outputArea = document.getElementById('offerOutput');
+                outputArea.value = offerToken;
+                outputArea.classList.remove('opacity-50');
+                document.getElementById('copyOfferBtn').classList.remove('hidden');
+                
+                btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i> Code Ready';
+                document.getElementById('hostStepB').classList.remove('opacity-40');
+                document.getElementById('connectBtn').disabled = false;
+                
+            } catch (error) {
+                console.error("Error creating offer:", error);
+                showToast("Error creating offer.", true);
+            }
+        }
+
+        // HOST FLOW: Consume Answer
+        async function connectAsHost() {
+            try {
+                const answerToken = document.getElementById('answerInput').value.trim();
+                if (!answerToken) return;
+
+                const answer = JSON.parse(atob(answerToken));
+                await peerConnection.setRemoteDescription(answer);
+                
+                const btn = document.getElementById('connectBtn');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Connecting...';
+                
+            } catch (error) {
+                console.error("Error connecting:", error);
+                showToast("Invalid Response Code.", true);
+            }
+        }
+
+        // JOIN FLOW: Consume Offer and Create Answer
+        async function createAnswer() {
+            try {
+                const offerToken = document.getElementById('offerInput').value.trim();
+                if (!offerToken) return;
+
+                const btn = document.getElementById('createAnswerBtn');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Connecting...';
+                btn.disabled = true;
+                btn.classList.add('opacity-70', 'cursor-not-allowed');
+
+                const offer = JSON.parse(atob(offerToken));
+                await peerConnection.setRemoteDescription(offer);
+
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                await waitForIceGatheringComplete();
+
+                const answerToken = btoa(JSON.stringify(peerConnection.localDescription));
+                
+                const outputArea = document.getElementById('answerOutput');
+                outputArea.value = answerToken;
+                outputArea.classList.remove('opacity-50');
+                document.getElementById('copyAnswerBtn').classList.remove('hidden');
+
+                btn.innerHTML = '<i class="fa-solid fa-check mr-2"></i> Ready to Connect';
+                document.getElementById('joinStepB').classList.remove('opacity-40');
+
+            } catch (error) {
+                console.error("Error creating answer:", error);
+                const btn = document.getElementById('createAnswerBtn');
+                btn.innerText = "Generate Response";
+                btn.disabled = false;
+                btn.classList.remove('opacity-70', 'cursor-not-allowed');
+                showToast("Invalid Invite Code.", true);
+            }
+        }
+
+        // Media Controls
+        function toggleAudio() {
+            if (!localStream) return;
+            isAudioMuted = !isAudioMuted;
+            localStream.getAudioTracks()[0].enabled = !isAudioMuted;
+            
+            const btn = document.getElementById('micBtn');
+            const icon = document.getElementById('micIcon');
+            const text = btn.querySelector('span');
+            
+            if (isAudioMuted) {
+                btn.classList.add('zoom-btn-danger');
+                icon.className = 'fa-solid fa-microphone-slash text-lg mb-1';
+                text.innerText = 'Unmute';
+            } else {
+                btn.classList.remove('zoom-btn-danger');
+                icon.className = 'fa-solid fa-microphone text-lg mb-1';
+                text.innerText = 'Mute';
+            }
+        }
+
+        function toggleVideo() {
+            if (!localStream) return;
+            isVideoStopped = !isVideoStopped;
+            localStream.getVideoTracks()[0].enabled = !isVideoStopped;
+            
+            const btn = document.getElementById('camBtn');
+            const icon = document.getElementById('camIcon');
+            const text = btn.querySelector('span');
+            
+            if (isVideoStopped) {
+                btn.classList.add('zoom-btn-danger');
+                icon.className = 'fa-solid fa-video-slash text-lg mb-1';
+                text.innerText = 'Start Video';
+            } else {
+                btn.classList.remove('zoom-btn-danger');
+                icon.className = 'fa-solid fa-video text-lg mb-1';
+                text.innerText = 'Stop Video';
+            }
+        }
+
+        function toggleSetupOverlay() {
+            if (setupOverlay.classList.contains('hidden')) {
+                setupOverlay.classList.remove('hidden');
+            } else {
+                // Only allow closing if we are actually connected
+                if(peerConnection && peerConnection.connectionState === 'connected'){
+                    setupOverlay.classList.add('hidden');
+                } else {
+                    showToast("Please connect to a meeting first");
+                }
+            }
+        }
+
+        function endCall() {
+            if(peerConnection) {
+                peerConnection.close();
+            }
+            if(localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+            }
+            window.location.reload();
+        }
+
+        // Utilities
+        function copyToClipboard(inputId, btnId) {
+            const input = document.getElementById(inputId);
+            input.select();
+            input.setSelectionRange(0, 99999);
+            
+            try {
+                document.execCommand('copy');
+                const btn = document.getElementById(btnId);
+                const originalText = btn.innerText;
+                btn.innerText = "Copied";
+                btn.classList.replace('bg-gray-700', 'bg-green-600');
+                
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.replace('bg-green-600', 'bg-gray-700');
+                }, 2000);
+            } catch (err) {
+                showToast("Copy failed", true);
+            }
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.innerText = message;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            
+            if (isError) {
+                toast.classList.add('border-red-500');
+            } else {
+                toast.classList.remove('border-red-500');
+            }
+
+            if(window.toastTimeout) clearTimeout(window.toastTimeout);
+            
+            window.toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 3000);
+        }
+
+        function switchTab(tab) {
+            const panelHost = document.getElementById('panel-host');
+            const panelJoin = document.getElementById('panel-join');
+            const tabHost = document.getElementById('tab-host');
+            const tabJoin = document.getElementById('tab-join');
+
+            if (tab === 'host') {
+                panelHost.classList.remove('hidden');
+                panelJoin.classList.add('hidden');
+                tabHost.classList.add('tab-active', 'text-[#0b5cff]');
+                tabHost.classList.remove('text-gray-400');
+                tabJoin.classList.remove('tab-active', 'text-[#0b5cff]');
+                tabJoin.classList.add('text-gray-400');
+            } else {
+                panelJoin.classList.remove('hidden');
+                panelHost.classList.add('hidden');
+                tabJoin.classList.add('tab-active', 'text-[#0b5cff]');
+                tabJoin.classList.remove('text-gray-400');
+                tabHost.classList.remove('tab-active', 'text-[#0b5cff]');
+                tabHost.classList.add('text-gray-400');
+            }
+        }
+    </script>
+</body>
+</html>
