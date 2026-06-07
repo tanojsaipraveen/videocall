@@ -31,6 +31,15 @@
         @media (max-width: 640px) {
             .main-chat-open { margin-right: 0; }
         }
+
+        /* Reactions Animation */
+        @keyframes popUp {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            80% { transform: translate(-50%, -60%) scale(1); opacity: 1; }
+            100% { transform: translate(-50%, -70%) scale(0.5); opacity: 0; }
+        }
+        .reaction-animate { animation: popUp 2s ease-out forwards; }
     </style>
 </head>
 <body class="text-white min-h-[100dvh] h-[100dvh] font-sans selection:bg-blue-500 selection:text-white flex flex-col overflow-hidden">
@@ -79,10 +88,11 @@
                         <div id="panel-host" class="p-5 sm:p-6 md:p-8">
                             <div class="space-y-4 sm:space-y-6">
                                 <div class="bg-[#242424] p-4 sm:p-5 rounded-lg border border-gray-700 text-center">
-                                    <h3 class="font-semibold text-gray-200 mb-2 text-sm sm:text-base">Your Meeting Code</h3>
+                                    <h3 class="font-semibold text-gray-200 mb-2 text-sm sm:text-base">Create New Meeting</h3>
                                     
                                     <div id="preGenerateState">
-                                        <p class="text-xs sm:text-sm text-gray-400 mb-4 mt-2">Generate a code to invite participants via decentralized signaling.</p>
+                                        <p class="text-xs sm:text-sm text-gray-400 mb-4 mt-2">Generate a secure code to invite participants.</p>
+                                        <input type="password" id="createRoomPassword" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-sm focus:outline-none focus:border-blue-500 text-white mb-4" placeholder="Optional Meeting Password">
                                         <button id="createRoomBtn" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 shadow-md w-full text-sm sm:text-base">
                                             Generate Meeting Code
                                         </button>
@@ -90,7 +100,7 @@
 
                                     <div id="postGenerateState" class="hidden">
                                         <div class="flex justify-center items-center space-x-2 sm:space-x-3 mb-4 mt-2">
-                                            <span id="roomIdDisplay" class="text-3xl sm:text-4xl font-mono text-[#0b5cff] tracking-widest font-bold">------</span>
+                                            <span id="roomIdDisplay" class="text-xl sm:text-2xl font-mono text-[#0b5cff] tracking-widest font-bold">------</span>
                                         </div>
                                         <p class="text-xs sm:text-sm text-gray-400 mb-5">Share this code with others so they can join.</p>
                                         
@@ -114,9 +124,10 @@
                         <div id="panel-join" class="p-5 sm:p-6 md:p-8 hidden">
                             <div class="space-y-4 sm:space-y-6">
                                 <div class="bg-[#242424] p-4 sm:p-5 rounded-lg border border-gray-700">
-                                    <h3 class="font-semibold text-gray-200 mb-3 sm:mb-4 text-center text-sm sm:text-base">Enter Meeting Code</h3>
+                                    <h3 class="font-semibold text-gray-200 mb-3 sm:mb-4 text-center text-sm sm:text-base">Enter Meeting Details</h3>
                                     <div class="space-y-4">
-                                        <input type="text" id="roomInput" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-center text-xl tracking-widest text-blue-400 focus:outline-none focus:border-blue-500 font-mono uppercase" placeholder="XYZ123" maxlength="6">
+                                        <input type="text" id="roomInput" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-center text-base sm:text-lg tracking-widest text-blue-400 focus:outline-none focus:border-blue-500 font-mono uppercase" placeholder="Enter Meeting Code">
+                                        <input type="password" id="joinRoomPassword" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-center text-sm focus:outline-none focus:border-blue-500 text-white" placeholder="Password (if required)">
                                         <button id="continueJoinBtn" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md text-sm sm:text-base">
                                             Continue to Setup
                                         </button>
@@ -141,10 +152,12 @@
                                     
                                     <div id="scheduleFormState">
                                         <input type="text" id="scheduleTitle" class="w-full bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-white mb-3" placeholder="Meeting Title (e.g. Sync Up)">
-                                        <div class="flex space-x-2 mb-4">
+                                        <div class="flex space-x-2 mb-3">
                                             <input type="date" id="scheduleDate" class="flex-1 w-1/2 bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-300">
                                             <input type="time" id="scheduleTime" class="flex-1 w-1/2 bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-300">
                                         </div>
+                                        <input type="password" id="schedulePassword" class="w-full bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-white mb-4" placeholder="Optional Meeting Password">
+
                                         <button id="generateScheduleBtn" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md text-sm sm:text-base">
                                             Generate Invite & Save
                                         </button>
@@ -152,7 +165,7 @@
 
                                     <div id="scheduleSuccessState" class="hidden text-center">
                                         <p class="text-green-400 font-medium mb-2"><i class="fa-solid fa-check-circle mr-2"></i>Scheduled Successfully</p>
-                                        <p class="text-gray-400 text-sm mb-4">Your meeting code is <span id="scheduledCodeDisplay" class="font-bold text-[#0b5cff]"></span></p>
+                                        <p class="text-gray-400 text-sm mb-4">Your meeting code is <span id="scheduledCodeDisplay" class="font-bold text-[#0b5cff] block mt-1 text-lg"></span></p>
                                         <div class="flex flex-col space-y-2 mb-4">
                                             <button id="addToGCalBtn" class="bg-gray-100 text-gray-900 hover:bg-white px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
                                                 <i class="fa-brands fa-google mr-2 text-red-500"></i> Add to Google Calendar
@@ -229,37 +242,20 @@
                 </div>
             </div>
 
-            <!-- Video Elements -->
-            <div class="w-full h-full relative flex items-center justify-center max-w-7xl mx-auto rounded-xl overflow-hidden" id="videoLayoutContainer">
+            <!-- DYNAMIC GRID: Video Elements -->
+            <div class="w-full h-full relative p-2 md:p-4 gap-2 md:gap-4 grid grid-cols-1 auto-rows-fr transition-all duration-300" id="videoGrid">
                 
-                <!-- Remote Video Container -->
-                <div id="remoteVideoContainer" class="w-full h-full relative rounded-xl shadow-lg border border-[#333] bg-black speaker-highlight group">
-                    <video id="remoteVideo" class="w-full h-full object-cover md:object-contain" autoplay playsinline></video>
-                    
-                    <!-- Fullscreen Button -->
-                    <button id="fullscreenBtn" aria-label="Toggle Fullscreen" class="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition z-10 hidden">
-                        <i class="fa-solid fa-expand"></i>
-                    </button>
-                    
-                    <!-- Remote Name Label -->
-                    <div id="remoteNameLabelContainer" class="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 bg-black/60 px-2 py-1 rounded text-xs sm:text-sm backdrop-blur-sm text-gray-200 hidden z-10">
-                        <span id="remoteNameDisplay">Participant</span>
-                    </div>
-
-                    <!-- Default Avatar for Remote -->
-                    <div id="remoteAvatar" class="absolute inset-0 flex flex-col items-center justify-center bg-[#242424] z-0">
-                        <div class="w-24 h-24 sm:w-32 sm:h-32 bg-gray-700 rounded-full flex items-center justify-center mb-3 sm:mb-4 text-3xl sm:text-4xl text-gray-400">
-                            <i class="fa-solid fa-user"></i>
-                        </div>
-                        <p class="text-gray-400 text-sm sm:text-lg font-medium" id="remoteAvatarName">Waiting for participant...</p>
-                    </div>
-                </div>
-
-                <!-- Local Video (PiP) -->
-                <div class="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 w-24 sm:w-40 md:w-64 aspect-[3/4] sm:aspect-video bg-black rounded-lg overflow-hidden border sm:border-2 border-[#333] shadow-2xl z-10 hover:border-gray-500 transition-colors speaker-highlight" id="localVideoContainer">
+                <!-- Local Video (Will resize based on grid) -->
+                <div class="relative w-full h-full bg-black rounded-xl overflow-hidden border border-[#333] shadow-lg speaker-highlight transition-all" id="localVideoWrapper">
                     <video id="localVideo" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline muted></video>
-                    <div class="absolute bottom-1 left-1.5 sm:bottom-1 sm:left-2 bg-black/60 px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-[8px] sm:text-[10px] backdrop-blur-sm text-gray-200" id="localNameLabel">You</div>
+                    
+                    <div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs backdrop-blur-sm text-gray-200 z-10" id="localNameLabel">You</div>
+                    
+                    <!-- Reaction Overlay -->
+                    <div id="localReaction" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl opacity-0 z-20 pointer-events-none"></div>
                 </div>
+
+                <!-- Remote streams will be appended here dynamically -->
             </div>
 
         </main>
@@ -274,14 +270,19 @@
             
             <!-- Messages Area -->
             <div id="chatMessages" class="flex-grow overflow-y-auto p-4 space-y-4 text-sm bg-[#1a1a1a]">
-                <div class="text-center text-xs text-gray-500 mb-2">Messages are end-to-end encrypted and not saved.</div>
+                <div class="text-center text-xs text-gray-500 mb-2">Messages & files are end-to-end encrypted peer-to-peer.</div>
                 <!-- Dynamic messages injected here -->
             </div>
             
             <!-- Input Area -->
             <div class="p-3 border-t border-[#333] bg-[#242424]">
                 <div class="flex items-center space-x-2 bg-black border border-gray-700 rounded-lg p-1 pr-2">
-                    <input type="text" id="chatInput" class="flex-grow bg-transparent border-none text-white text-sm px-3 py-2 focus:outline-none" placeholder="Type message here...">
+                    <label for="fileInput" class="text-gray-400 hover:text-white p-2 cursor-pointer transition">
+                        <i class="fa-solid fa-paperclip"></i>
+                    </label>
+                    <input type="file" id="fileInput" class="hidden">
+                    
+                    <input type="text" id="chatInput" class="flex-grow bg-transparent border-none text-white text-sm px-1 py-2 focus:outline-none" placeholder="Type message...">
                     <button id="sendChatBtn" aria-label="Send Message" class="text-[#0b5cff] hover:text-blue-400 p-2 transition">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
@@ -305,27 +306,45 @@
         </div>
 
         <div class="flex items-center space-x-0.5 sm:space-x-2">
-            <button class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300 hidden md:flex">
-                <i class="fa-solid fa-user-group text-xl mb-1"></i>
-                <span class="text-[11px] font-medium leading-none">Participants</span>
+            <!-- Screen Share -->
+            <button id="shareBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-green-500 hover:bg-green-500/10">
+                <i class="fa-solid fa-arrow-up-from-bracket text-lg sm:text-xl mb-1"></i>
+                <span class="text-[9px] sm:text-[11px] font-medium leading-none text-center">Share</span>
             </button>
+            
+            <!-- Record Meeting -->
+            <button id="recordBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300 hover:bg-gray-700 hidden sm:flex">
+                <i class="fa-solid fa-record-vinyl text-lg sm:text-xl mb-1"></i>
+                <span class="text-[9px] sm:text-[11px] font-medium leading-none text-center">Record</span>
+            </button>
+
+            <!-- Reactions Menu Wrapper -->
+            <div class="relative group hidden sm:block">
+                <button id="reactMenuBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-yellow-400 hover:bg-yellow-500/10">
+                    <i class="fa-regular fa-face-smile text-lg sm:text-xl mb-1"></i>
+                    <span class="text-[9px] sm:text-[11px] font-medium leading-none text-center">React</span>
+                </button>
+                <!-- Reactions Tooltip -->
+                <div class="absolute bottom-[100%] left-1/2 transform -translate-x-1/2 mb-2 bg-[#2a2a2a] border border-[#444] rounded-lg p-2 flex space-x-2 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                    <button class="react-emoji-btn text-xl hover:scale-125 transition" data-emoji="👍">👍</button>
+                    <button class="react-emoji-btn text-xl hover:scale-125 transition" data-emoji="👏">👏</button>
+                    <button class="react-emoji-btn text-xl hover:scale-125 transition" data-emoji="😂">😂</button>
+                    <button class="react-emoji-btn text-xl hover:scale-125 transition" data-emoji="🎉">🎉</button>
+                    <button class="react-emoji-btn text-xl hover:scale-125 transition" data-emoji="✋">✋</button>
+                </div>
+            </div>
+
+            <!-- Chat -->
             <button id="chatBtnIcon" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300 relative">
                 <i class="fa-regular fa-comment-dots text-xl mb-1"></i>
                 <span class="text-[9px] sm:text-[11px] font-medium leading-none">Chat</span>
                 <span id="chatNotificationBadge" class="absolute top-1 right-2 w-2.5 h-2.5 bg-red-500 rounded-full hidden"></span>
             </button>
-            <button id="shareBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-green-500 hover:bg-green-500/10">
-                <i class="fa-solid fa-arrow-up-from-bracket text-lg sm:text-xl mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] font-medium leading-none text-center">Share</span>
-            </button>
+            
             <!-- In-Call Invite Button -->
-            <button id="inCallInviteBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-blue-400 hover:bg-blue-500/10 hidden sm:flex">
+            <button id="inCallInviteBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-blue-400 hover:bg-blue-500/10 hidden md:flex">
                 <i class="fa-solid fa-user-plus text-base sm:text-xl mb-1"></i>
                 <span class="text-[9px] sm:text-[11px] font-medium leading-none">Invite</span>
-            </button>
-            <button id="setupOverlayBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-400 hover:bg-gray-500/10 hidden sm:flex">
-                <i class="fa-solid fa-gear text-base sm:text-xl mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] font-medium leading-none">Config</span>
             </button>
         </div>
 
@@ -344,24 +363,34 @@
     <script type="module">
         import { joinRoom as joinTrysteroRoom } from 'https://esm.sh/trystero@0.11.1/torrent';
 
-        const APP_NAMESPACE = 'zoom-clone-webtorrent-v3';
+        const APP_NAMESPACE = 'zoom-clone-webtorrent-v4';
         let room = null;
         let localStream;
-        let remoteStream;
         let screenStream;
+        
+        // Multi-Participant State Map { peerId: { wrapper, video, name, isScreenSharing } }
+        const activePeers = {}; 
+
         let isAudioMuted = false;
         let isVideoStopped = false;
         let isScreenSharing = false;
         let isConnected = false;
+        let roomPasswordStr = null;
+        
+        // Recording state
+        let mediaRecorder;
+        let recordedChunks = [];
         
         let userName = "Guest";
         let currentRoomId = '';
         let lastScheduledGCalUrl = '';
         
-        // Actions
+        // Trystero Actions
         let sendNameAction;
         let sendChatAction;
         let sendScreenStateAction;
+        let sendReactionAction;
+        let sendFileAction;
 
         // Audio Context for Active Speaker detection
         let audioContext;
@@ -371,9 +400,7 @@
             const savedName = localStorage.getItem('zoom_clone_username');
             if (savedName) document.getElementById('userNameInput').value = savedName;
 
-            // Initialize default schedule date/time
             initScheduleDefaults();
-            // Load history
             renderHistory();
             renderScheduled();
 
@@ -382,39 +409,29 @@
                 document.getElementById('roomInput').value = urlParams.get('room');
                 currentRoomId = urlParams.get('room');
                 switchTab('join');
-                goToLobby(); // Skip connection panel if link has code
+                goToLobby(); 
             }
 
-            // Keyboard events
-            document.getElementById('userNameInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') confirmLobby();
-            });
-            document.getElementById('roomInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') processJoin();
-            });
-            document.getElementById('chatInput').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') sendChatMessage();
-            });
+            // UI Listeners
+            document.getElementById('userNameInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') confirmLobby(); });
+            document.getElementById('roomInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') processJoin(); });
+            document.getElementById('chatInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
 
-            // Button Event Listeners
             document.getElementById('previewMicBtn').addEventListener('click', togglePreviewAudio);
             document.getElementById('previewCamBtn').addEventListener('click', togglePreviewVideo);
             document.getElementById('micSelect').addEventListener('change', changeDevice);
             document.getElementById('cameraSelect').addEventListener('change', changeDevice);
             document.getElementById('startBtn').addEventListener('click', confirmLobby);
             
-            // Tab Event Listeners
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
-            });
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab)));
 
-            // Connection actions
+            // Connect & Setup 
             document.getElementById('createRoomBtn').addEventListener('click', generateCode);
             document.getElementById('continueHostBtn').addEventListener('click', goToLobby);
             document.getElementById('continueJoinBtn').addEventListener('click', processJoin);
             document.getElementById('backToConnectionBtn').addEventListener('click', backToConnection);
             
-            // Schedule actions
+            // Scheduling
             document.getElementById('generateScheduleBtn').addEventListener('click', processSchedule);
             document.getElementById('scheduleAnotherBtn').addEventListener('click', () => {
                 document.getElementById('scheduleSuccessState').classList.add('hidden');
@@ -424,14 +441,13 @@
             document.getElementById('addToGCalBtn').addEventListener('click', () => window.open(lastScheduledGCalUrl, '_blank'));
             document.getElementById('copyScheduledLinkBtn').addEventListener('click', copyScheduledInviteLink);
             
+            // Links & Copy
             document.getElementById('copyRoomBtn').addEventListener('click', copyRoomId);
             document.getElementById('copyLinkBtn').addEventListener('click', copyInviteLink);
-            
-            // History/Upcoming Delegation
             document.getElementById('recentRoomsList').addEventListener('click', handleHistoryClick);
             document.getElementById('upcomingMeetingsList').addEventListener('click', handleUpcomingClick);
 
-            // Main Controls Event Listeners
+            // Control Bar Actions
             document.getElementById('micBtn').addEventListener('click', toggleAudio);
             document.getElementById('camBtn').addEventListener('click', toggleVideo);
             document.getElementById('chatBtnIcon').addEventListener('click', toggleChat);
@@ -439,13 +455,60 @@
             document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
             document.getElementById('shareBtn').addEventListener('click', toggleScreenShare);
             document.getElementById('inCallInviteBtn').addEventListener('click', copyInviteLink);
-            document.getElementById('setupOverlayBtn').addEventListener('click', toggleSetupOverlay);
-            document.getElementById('fullscreenBtn').addEventListener('click', () => toggleFullscreen('remoteVideoContainer'));
             document.getElementById('endCallBtn').addEventListener('click', endCall);
+            
+            // Modern Features
+            document.getElementById('recordBtn').addEventListener('click', toggleRecording);
+            document.getElementById('fileInput').addEventListener('change', handleFileUpload);
+            document.querySelectorAll('.react-emoji-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => triggerLocalReaction(e.target.dataset.emoji));
+            });
 
-            // Start Lobby Preview immediately
             initLobby();
         });
+
+        // -------------------------
+        // FEATURE: SECURE ROOM IDs & PASSWORDS
+        // -------------------------
+        function generateSecureRoomId() {
+            // Creates a shorter 12-char ID for readability but higher entropy than random string
+            if(crypto && crypto.randomUUID) {
+                return crypto.randomUUID().replace(/-/g, '').substring(0, 12).toUpperCase();
+            }
+            return Math.random().toString(36).substring(2, 14).toUpperCase();
+        }
+
+        function formatRoomId(id) {
+            return id.replace(/(.{4})/g, '$1-').slice(0, -1);
+        }
+
+        // -------------------------
+        // FEATURE: DYNAMIC GRID LAYOUT
+        // -------------------------
+        function updateGridLayout() {
+            const grid = document.getElementById('videoGrid');
+            const totalPeers = Object.keys(activePeers).length + 1; // +1 for local peer
+            
+            grid.className = 'w-full h-full p-2 md:p-4 gap-2 md:gap-4 grid auto-rows-fr transition-all duration-300';
+            
+            if (totalPeers === 1) {
+                grid.classList.add('grid-cols-1');
+            } else if (totalPeers <= 2) {
+                grid.classList.add('grid-cols-1', 'md:grid-cols-2');
+            } else if (totalPeers <= 4) {
+                grid.classList.add('grid-cols-2');
+            } else if (totalPeers <= 9) {
+                grid.classList.add('grid-cols-2', 'md:grid-cols-3');
+            } else {
+                grid.classList.add('grid-cols-3', 'md:grid-cols-4');
+            }
+
+            // Bandwidth safety warning
+            if (totalPeers > 4 && !window.bandwidthWarningShown) {
+                showToast("Warning: Many peers connected. P2P Mesh may strain bandwidth.", true);
+                window.bandwidthWarningShown = true;
+            }
+        }
 
         // -------------------------
         // FEATURE: HISTORY & SCHEDULE STATE
@@ -457,6 +520,7 @@
             const mins = String(now.getMinutes()).padStart(2, '0');
             document.getElementById('scheduleTime').value = `${hours}:${mins}`;
             document.getElementById('scheduleTitle').value = '';
+            document.getElementById('schedulePassword').value = '';
         }
 
         function addToHistory(roomId) {
@@ -483,7 +547,7 @@
                 <li class="flex justify-between items-center bg-[#2a2a2a] p-2.5 rounded-lg cursor-pointer hover:bg-gray-700 border border-gray-700 transition" data-room="${item.roomId}">
                     <div class="flex items-center">
                         <i class="fa-solid fa-clock-rotate-left text-gray-500 mr-3"></i>
-                        <span class="font-mono text-blue-400 font-bold tracking-widest">${item.roomId}</span>
+                        <span class="font-mono text-blue-400 font-bold tracking-widest">${formatRoomId(item.roomId)}</span>
                     </div>
                     <span class="text-[10px] text-gray-400">${new Date(item.timestamp).toLocaleDateString()}</span>
                 </li>
@@ -503,13 +567,14 @@
             const title = titleInput || 'P2P Video Meeting';
             const date = document.getElementById('scheduleDate').value;
             const time = document.getElementById('scheduleTime').value;
+            const pwd = document.getElementById('schedulePassword').value.trim();
             
             if(!date || !time) {
                 showToast("Please provide a valid date and time.", true);
                 return;
             }
 
-            const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const roomId = generateSecureRoomId();
             const link = window.location.origin + window.location.pathname + '?room=' + roomId;
             currentRoomId = roomId;
 
@@ -520,7 +585,10 @@
             const formatGCalDate = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
             const datesStr = `${formatGCalDate(startDateTime)}/${formatGCalDate(endDateTime)}`;
             
-            lastScheduledGCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&details=${encodeURIComponent("Join meeting here:\n" + link)}&dates=${datesStr}`;
+            let detailsStr = `Join meeting here:\n${link}\nMeeting Code: ${roomId}`;
+            if(pwd) detailsStr += `\nPassword: ${pwd}`;
+
+            lastScheduledGCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&details=${encodeURIComponent(detailsStr)}&dates=${datesStr}`;
 
             // Save scheduled
             let scheduled = JSON.parse(localStorage.getItem('zoom_clone_scheduled') || '[]');
@@ -528,17 +596,15 @@
             scheduled.sort((a,b) => a.timestamp - b.timestamp); // sort chronological
             localStorage.setItem('zoom_clone_scheduled', JSON.stringify(scheduled));
 
-            // Update UI
             document.getElementById('scheduleFormState').classList.add('hidden');
             document.getElementById('scheduleSuccessState').classList.remove('hidden');
-            document.getElementById('scheduledCodeDisplay').innerText = roomId;
+            document.getElementById('scheduledCodeDisplay').innerText = formatRoomId(roomId);
             
             renderScheduled();
         }
 
         function renderScheduled() {
             let scheduled = JSON.parse(localStorage.getItem('zoom_clone_scheduled') || '[]');
-            // Filter out old ones (older than 1 day)
             scheduled = scheduled.filter(item => item.timestamp > Date.now() - 24*60*60*1000);
             localStorage.setItem('zoom_clone_scheduled', JSON.stringify(scheduled));
 
@@ -560,7 +626,7 @@
                 <li class="flex justify-between items-center bg-[#2a2a2a] p-2.5 rounded-lg border border-gray-700 transition">
                     <div class="flex flex-col">
                         <span class="font-semibold text-sm text-gray-200 truncate max-w-[150px] sm:max-w-[200px]">${item.title}</span>
-                        <span class="text-[10px] text-gray-400">${displayDate} at ${item.time} • <span class="font-mono text-blue-400">${item.roomId}</span></span>
+                        <span class="text-[10px] text-gray-400">${displayDate} at ${item.time} • <span class="font-mono text-blue-400">${formatRoomId(item.roomId)}</span></span>
                     </div>
                     <button class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-medium start-scheduled-btn" data-room="${item.roomId}">Start</button>
                 </li>
@@ -580,7 +646,6 @@
             const text = `Join my meeting:\nLink: ${link}\nMeeting Code: ${currentRoomId}`;
             copyTextSecurely(text, "Invitation Copied!", "copyScheduledLinkBtn", '<i class="fa-solid fa-link mr-2"></i> Copy Invitation Link');
         }
-
 
         // -------------------------
         // FEATURE 1: PRE-CALL LOBBY & DEVICES
@@ -621,9 +686,7 @@
         }
 
         async function changeDevice() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
+            if (localStream) localStream.getTracks().forEach(track => track.stop());
             
             const camId = document.getElementById('cameraSelect').value;
             const micId = document.getElementById('micSelect').value;
@@ -639,10 +702,8 @@
                     document.getElementById('localVideo').srcObject = localStream;
                 }
                 
-                // Re-apply mute/stop states to new stream
                 localStream.getAudioTracks()[0].enabled = !isAudioMuted;
                 localStream.getVideoTracks()[0].enabled = !isVideoStopped;
-                
             } catch(e) {
                 console.error("Error changing device", e);
             }
@@ -698,13 +759,10 @@
             document.getElementById('localNameLabel').innerText = userName + " (You)";
             document.getElementById('localVideo').srcObject = localStream;
             
-            // Set URL State
             window.history.pushState({}, '', '?room=' + currentRoomId);
-            
-            // Close overlays
             document.getElementById('setupOverlay').classList.add('hidden');
             
-            // Connect
+            updateGridLayout();
             initAudioContext();
             initDecentralizedRoom(currentRoomId);
         }
@@ -713,13 +771,9 @@
         // FEATURE 3: ACTIVE SPEAKER DETECTION
         // -------------------------
         function initAudioContext() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-            if (localStream) monitorSpeaker(localStream, 'localVideoContainer');
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioContext.state === 'suspended') audioContext.resume();
+            if (localStream) monitorSpeaker(localStream, 'localVideoWrapper');
         }
 
         function monitorSpeaker(stream, elementId) {
@@ -736,26 +790,21 @@
                 let animationId;
 
                 function checkVolume() {
-                    // Stop analyzing if stream gets inactive
                     if (!stream.active) {
-                        element.classList.remove('ring-4', 'ring-[#0b5cff]');
+                        if(element) element.classList.remove('ring-4', 'ring-[#0b5cff]');
                         cancelAnimationFrame(animationId);
                         return;
                     }
 
                     analyser.getByteFrequencyData(dataArray);
                     
-                    // Use RMS (Root Mean Square) for more accurate volume representation
                     let sumSquares = 0;
-                    for (let i = 0; i < dataArray.length; i++) {
-                        sumSquares += dataArray[i] * dataArray[i];
-                    }
+                    for (let i = 0; i < dataArray.length; i++) sumSquares += dataArray[i] * dataArray[i];
                     let rms = Math.sqrt(sumSquares / dataArray.length);
 
-                    if (rms > 25) { // Threshold adjusted for RMS
-                        element.classList.add('ring-4', 'ring-[#0b5cff]');
-                    } else {
-                        element.classList.remove('ring-4', 'ring-[#0b5cff]');
+                    if(element) {
+                        if (rms > 25) element.classList.add('ring-4', 'ring-[#0b5cff]');
+                        else element.classList.remove('ring-4', 'ring-[#0b5cff]');
                     }
                     animationId = requestAnimationFrame(checkVolume);
                 }
@@ -773,10 +822,20 @@
             const statusText = document.getElementById('statusText');
             
             statusDot.className = 'w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]';
-            statusText.innerText = 'Searching Trackers...';
+            statusText.innerText = 'Connecting...';
 
-            room = joinTrysteroRoom({ appId: APP_NAMESPACE }, roomId);
+            const roomConfig = { appId: APP_NAMESPACE };
+            if(roomPasswordStr) roomConfig.password = roomPasswordStr;
+
+            try {
+                room = joinTrysteroRoom(roomConfig, roomId);
+            } catch (e) {
+                showToast("Failed to join. Invalid format or password.", true);
+                endCall();
+                return;
+            }
             
+            // Actions
             const [sendName, getName] = room.makeAction('name');
             sendNameAction = sendName;
             
@@ -786,18 +845,25 @@
             const [sendScreenState, getScreenState] = room.makeAction('screenState');
             sendScreenStateAction = sendScreenState;
 
+            const [sendReaction, getReaction] = room.makeAction('reaction');
+            sendReactionAction = sendReaction;
+
+            const [sendFile, getFile] = room.makeAction('file');
+            sendFileAction = sendFile;
+
+            // Events
             room.onPeerJoin(peerId => {
-                showToast("Peer discovered! Establishing connection...");
+                showToast("Peer joined...");
                 if (localStream) room.addStream(localStream, peerId);
                 if (isScreenSharing && screenStream) room.addStream(screenStream, peerId);
-                
-                // Slight delay ensures the data channel is fully ready for custom actions
                 setTimeout(() => sendNameAction(userName, peerId), 500);
             });
 
             getName((name, peerId) => {
-                document.getElementById('remoteNameDisplay').innerText = name;
-                document.getElementById('remoteAvatarName').innerText = name + " is connecting...";
+                if(activePeers[peerId]) {
+                    activePeers[peerId].name = name;
+                    activePeers[peerId].label.innerText = name;
+                }
             });
 
             getChat((data, peerId) => {
@@ -807,77 +873,261 @@
                     showToast("New message from " + data.sender);
                 }
             });
+
+            getReaction((emoji, peerId) => {
+                triggerRemoteReaction(peerId, emoji);
+            });
+
+            getFile((data, peerId) => {
+                appendFileMessage(data.sender, data.name, data.buffer, data.type, false);
+                if(document.getElementById('chatSidebar').classList.contains('chat-closed')) {
+                    document.getElementById('chatNotificationBadge').classList.remove('hidden');
+                    showToast("New file from " + data.sender);
+                }
+            });
             
             getScreenState((data, peerId) => {
-                if (!data.isSharing && remoteStream) {
-                    document.getElementById('remoteVideo').srcObject = remoteStream;
+                if (activePeers[peerId]) {
+                    if(!data.isSharing && activePeers[peerId].camStream) {
+                        activePeers[peerId].video.srcObject = activePeers[peerId].camStream;
+                        activePeers[peerId].video.classList.add('object-cover');
+                        activePeers[peerId].video.classList.remove('object-contain');
+                    }
                 }
             });
 
             room.onPeerStream((stream, peerId) => {
-                if (stream.getVideoTracks().length > 0) {
-                    if (stream.getAudioTracks().length > 0) {
-                        remoteStream = stream; // Save primary cam stream
-                        monitorSpeaker(stream, 'remoteVideoContainer');
+                isConnected = true;
+                statusDot.className = 'w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
+                statusText.innerText = 'Connected';
+
+                // Detect if it's a screen share stream (heuristics: no audio tracks, or secondary stream)
+                const isLikelyScreen = stream.getAudioTracks().length === 0 && activePeers[peerId]?.camStream;
+
+                if (!activePeers[peerId]) {
+                    // Create Multi-Participant Grid Wrapper
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'relative w-full h-full bg-black rounded-xl overflow-hidden border border-[#333] shadow-lg speaker-highlight group transition-all';
+                    wrapper.id = `peer-${peerId}`;
+
+                    const video = document.createElement('video');
+                    video.className = 'w-full h-full object-cover';
+                    video.autoplay = true;
+                    video.playsInline = true;
+                    video.srcObject = stream;
+
+                    const label = document.createElement('div');
+                    label.className = 'absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-xs text-white backdrop-blur-sm z-10';
+                    label.innerText = "Participant connecting...";
+
+                    const reaction = document.createElement('div');
+                    reaction.className = 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-6xl opacity-0 z-20 pointer-events-none';
+
+                    // PiP Button feature
+                    const pipBtn = document.createElement('button');
+                    pipBtn.className = 'absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition z-30';
+                    pipBtn.innerHTML = '<i class="fa-solid fa-clone"></i>';
+                    pipBtn.title = "Picture-in-Picture";
+                    pipBtn.onclick = () => { if(document.pictureInPictureEnabled) video.requestPictureInPicture(); };
+
+                    wrapper.appendChild(video);
+                    wrapper.appendChild(label);
+                    wrapper.appendChild(reaction);
+                    wrapper.appendChild(pipBtn);
+
+                    document.getElementById('videoGrid').appendChild(wrapper);
+
+                    activePeers[peerId] = { wrapper, video, label, reactionEl: reaction, camStream: stream, name: "Participant" };
+                    updateGridLayout();
+                    
+                    if(!isLikelyScreen) monitorSpeaker(stream, `peer-${peerId}`);
+                } else {
+                    // Update existing peer video stream
+                    if(isLikelyScreen) {
+                        activePeers[peerId].video.srcObject = stream;
+                        activePeers[peerId].video.classList.remove('object-cover');
+                        activePeers[peerId].video.classList.add('object-contain');
+                    } else {
+                        activePeers[peerId].camStream = stream;
+                        activePeers[peerId].video.srcObject = stream;
                     }
-                    
-                    document.getElementById('remoteVideo').srcObject = stream;
-                    isConnected = true;
-                    
-                    document.getElementById('remoteAvatar').style.display = 'none';
-                    document.getElementById('remoteVideo').style.zIndex = '1';
-                    document.getElementById('remoteNameLabelContainer').classList.remove('hidden');
-                    document.getElementById('fullscreenBtn').classList.remove('hidden');
-                    
-                    statusDot.className = 'w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
-                    statusText.innerText = 'Connected';
-                    document.getElementById('setupOverlay').classList.add('hidden');
                 }
             });
 
             room.onPeerLeave(peerId => {
-                document.getElementById('remoteAvatar').style.display = 'flex';
-                document.getElementById('remoteVideo').style.zIndex = '-1';
-                document.getElementById('remoteNameLabelContainer').classList.add('hidden');
-                document.getElementById('fullscreenBtn').classList.add('hidden');
-                document.getElementById('remoteAvatarName').innerText = "Waiting for participant...";
-                document.getElementById('remoteNameDisplay').innerText = "Participant";
-                document.getElementById('remoteVideoContainer').classList.remove('ring-4', 'ring-[#0b5cff]');
-                
-                statusDot.className = 'w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]';
-                statusText.innerText = 'Disconnected';
-                isConnected = false;
-                showToast("Participant disconnected", true);
+                if (activePeers[peerId]) {
+                    activePeers[peerId].wrapper.remove();
+                    delete activePeers[peerId];
+                    updateGridLayout();
+                    showToast("Participant disconnected", true);
+                }
+
+                if (Object.keys(activePeers).length === 0) {
+                    statusDot.className = 'w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]';
+                    statusText.innerText = 'Waiting...';
+                }
             });
         }
+
+        // -------------------------
+        // FEATURE: LIVE REACTIONS
+        // -------------------------
+        function triggerLocalReaction(emoji) {
+            if(!isConnected) return showToast("Connect to a meeting to react");
+            sendReactionAction(emoji);
+            
+            const reactEl = document.getElementById('localReaction');
+            reactEl.innerText = emoji;
+            reactEl.classList.remove('reaction-animate');
+            void reactEl.offsetWidth; // trigger reflow
+            reactEl.classList.add('reaction-animate');
+        }
+
+        function triggerRemoteReaction(peerId, emoji) {
+            if(activePeers[peerId]) {
+                const reactEl = activePeers[peerId].reactionEl;
+                reactEl.innerText = emoji;
+                reactEl.classList.remove('reaction-animate');
+                void reactEl.offsetWidth; // trigger reflow
+                reactEl.classList.add('reaction-animate');
+            }
+        }
+
+        // -------------------------
+        // FEATURE: RECORD MEETING
+        // -------------------------
+        async function toggleRecording() {
+            const btn = document.getElementById('recordBtn');
+            
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                btn.classList.remove('text-red-500');
+                btn.classList.add('text-gray-300');
+                showToast("Recording stopped. Downloading file...");
+                return;
+            }
+
+            try {
+                // Record the layout visually
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                
+                mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+                
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `P2P_Meeting_${new Date().getTime()}.webm`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    recordedChunks = [];
+                    stream.getTracks().forEach(t => t.stop());
+                };
+                
+                // End native sharing stop hook
+                stream.getVideoTracks()[0].onended = () => {
+                     if(mediaRecorder.state === 'recording') {
+                         mediaRecorder.stop();
+                         btn.classList.remove('text-red-500');
+                         btn.classList.add('text-gray-300');
+                     }
+                };
+
+                mediaRecorder.start();
+                btn.classList.remove('text-gray-300');
+                btn.classList.add('text-red-500');
+                showToast("Meeting Recording Started");
+                
+            } catch (err) {
+                showToast("Failed to start screen recording", true);
+            }
+        }
+
+        // -------------------------
+        // FEATURE: P2P FILE SHARING
+        // -------------------------
+        function handleFileUpload(e) {
+            if(!isConnected) return showToast("Connect to a meeting to share files", true);
+            
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if(file.size > 5 * 1024 * 1024) { // 5MB limit check for basic WebRTC transfers
+                return showToast("File too large. Please keep under 5MB for P2P.", true);
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (ev) => {
+                const buffer = ev.target.result;
+                try {
+                    sendFileAction({ name: file.name, type: file.type, buffer: buffer, sender: userName });
+                    appendFileMessage("You", file.name, buffer, file.type, true);
+                    showToast("File sent successfully");
+                } catch (err) {
+                    showToast("Failed to send file. Connection may be weak.", true);
+                }
+                e.target.value = ''; // Reset input
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function appendFileMessage(sender, filename, arrayBuffer, mimeType, isSelf) {
+            const container = document.getElementById('chatMessages');
+            const alignClass = isSelf ? 'text-right' : 'text-left';
+            const bgClass = isSelf ? 'bg-[#0b5cff]' : 'bg-[#333]';
+            const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            const blob = new Blob([arrayBuffer], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            
+            const msgHtml = `
+                <div class="mb-3 ${alignClass}">
+                    <span class="text-xs text-gray-400 mx-1">${sender} • ${time}</span>
+                    <div class="inline-block px-3 py-2 rounded-lg text-white ${bgClass} max-w-[85%] text-left shadow-sm">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-file-arrow-down text-2xl"></i>
+                            <div class="flex flex-col overflow-hidden">
+                                <span class="text-xs font-semibold truncate">${filename}</span>
+                                <a href="${url}" download="${filename}" class="text-[10px] underline hover:text-gray-200 cursor-pointer">Download File</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', msgHtml);
+            container.scrollTop = container.scrollHeight;
+        }
+
 
         // -------------------------
         // HOST & JOIN FLOWS
         // -------------------------
         function generateCode() {
-            const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const roomId = generateSecureRoomId();
             currentRoomId = roomId;
+            roomPasswordStr = document.getElementById('createRoomPassword').value.trim() || null;
             
-            document.getElementById('roomIdDisplay').innerText = roomId;
+            document.getElementById('roomIdDisplay').innerText = formatRoomId(roomId);
             document.getElementById('preGenerateState').classList.add('hidden');
             document.getElementById('postGenerateState').classList.remove('hidden');
             showToast("Meeting code generated");
         }
 
         function processJoin() {
-            const roomId = document.getElementById('roomInput').value.trim().toUpperCase();
-            if (!roomId || roomId.length < 6) {
-                showToast("Please enter a valid 6-character code.", true);
+            const roomIdRaw = document.getElementById('roomInput').value.trim().toUpperCase().replace(/-/g, '');
+            if (!roomIdRaw || roomIdRaw.length < 6) {
+                showToast("Please enter a valid meeting code.", true);
                 return;
             }
-            currentRoomId = roomId;
+            currentRoomId = roomIdRaw;
+            roomPasswordStr = document.getElementById('joinRoomPassword').value.trim() || null;
             goToLobby();
         }
 
         function goToLobby() {
-            if (currentRoomId) {
-                addToHistory(currentRoomId);
-            }
+            if (currentRoomId) addToHistory(currentRoomId);
             document.getElementById('connectionPanel').classList.add('hidden');
             document.getElementById('step1Panel').classList.remove('hidden');
             document.getElementById('mainTitle').innerText = "Configure Devices";
@@ -890,13 +1140,10 @@
         }
 
         // -------------------------
-        // FEATURE 2: SCREEN SHARING
+        // SCREEN SHARING
         // -------------------------
         async function toggleScreenShare() {
-            if (!isConnected) {
-                showToast("Please connect to a meeting first", true);
-                return;
-            }
+            if (!isConnected) return showToast("Please connect to a meeting first", true);
 
             if (!isScreenSharing) {
                 try {
@@ -911,11 +1158,10 @@
                     
                     const localVidElem = document.getElementById('localVideo');
                     localVidElem.srcObject = screenStream;
-                    localVidElem.classList.remove('scale-x-[-1]');
+                    localVidElem.classList.remove('scale-x-[-1]', 'object-cover');
+                    localVidElem.classList.add('object-contain');
                     
                     showToast("Screen sharing started");
-
-                    // Handle native browser "Stop sharing" button
                     screenStream.getVideoTracks()[0].onended = stopScreenSharing;
                 } catch (e) {
                     showToast("Screen share cancelled", true);
@@ -940,13 +1186,14 @@
             
             const localVidElem = document.getElementById('localVideo');
             localVidElem.srcObject = localStream;
-            localVidElem.classList.add('scale-x-[-1]');
+            localVidElem.classList.remove('object-contain');
+            localVidElem.classList.add('scale-x-[-1]', 'object-cover');
             
             showToast("Screen sharing stopped");
         }
 
         // -------------------------
-        // FEATURE: TEXT CHAT
+        // TEXT CHAT
         // -------------------------
         function toggleChat() {
             const sidebar = document.getElementById('chatSidebar');
@@ -965,10 +1212,7 @@
         }
 
         function sendChatMessage() {
-            if(!isConnected) {
-                showToast("Connect to meeting to chat", true);
-                return;
-            }
+            if(!isConnected) return showToast("Connect to meeting to chat", true);
             const input = document.getElementById('chatInput');
             const text = input.value.trim();
             if (!text) return;
@@ -999,17 +1243,6 @@
         // -------------------------
         // UTILS & UI CONTROLS
         // -------------------------
-        function toggleFullscreen(elementId) {
-            const elem = document.getElementById(elementId);
-            if (!document.fullscreenElement) {
-                elem.requestFullscreen().catch(err => {
-                    showToast(`Error attempting fullscreen: ${err.message}`, true);
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
         function toggleAudio() {
             isAudioMuted = !isAudioMuted;
             if (localStream) localStream.getAudioTracks()[0].enabled = !isAudioMuted;
@@ -1057,23 +1290,19 @@
             if (setupOverlay.classList.contains('hidden')) {
                 setupOverlay.classList.remove('hidden');
                 
-                // If opening overlay during a call, show the connection panel's invite info
                 if (isConnected || currentRoomId) {
                     document.getElementById('step1Panel').classList.add('hidden');
                     document.getElementById('connectionPanel').classList.remove('hidden');
                     switchTab('host');
                     document.getElementById('preGenerateState').classList.add('hidden');
                     document.getElementById('postGenerateState').classList.remove('hidden');
-                    document.getElementById('roomIdDisplay').innerText = currentRoomId;
+                    document.getElementById('roomIdDisplay').innerText = formatRoomId(currentRoomId);
                     document.getElementById('continueHostBtn').classList.add('hidden');
                     document.getElementById('mainTitle').innerText = "Meeting Info";
                 }
             } else {
-                if(isConnected){
-                    setupOverlay.classList.add('hidden');
-                } else {
-                    showToast("Please complete setup or connect first");
-                }
+                if(isConnected) setupOverlay.classList.add('hidden');
+                else showToast("Please complete setup or connect first");
             }
         }
 
@@ -1085,7 +1314,7 @@
         }
 
         function copyRoomId() {
-            copyTextSecurely(currentRoomId, "Meeting Code copied!", 'copyRoomBtn', '<i class="fa-solid fa-copy mr-2"></i>Copy Code');
+            copyTextSecurely(formatRoomId(currentRoomId), "Meeting Code copied!", 'copyRoomBtn', '<i class="fa-solid fa-copy mr-2"></i>Copy Code');
         }
 
         function copyInviteLink() {
