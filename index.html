@@ -650,16 +650,56 @@
         // -------------------------
         // FEATURE 1: PRE-CALL LOBBY & DEVICES
         // -------------------------
+        async function getFallbackStream() {
+            try {
+                // Attempt to get both camera and mic
+                return await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+            } catch (e) {
+                console.warn("Could not get both video and audio. Trying audio only.", e);
+                try {
+                    // Fallback 1: Audio only (e.g., no webcam connected)
+                    return await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+                } catch (e2) {
+                    console.warn("Could not get audio. Trying video only.", e2);
+                    try {
+                        // Fallback 2: Video only (e.g., no microphone connected)
+                        return await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+                    } catch (e3) {
+                        // Fallback 3: Neither found
+                        throw e3;
+                    }
+                }
+            }
+        }
+
         async function initLobby() {
             try {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
+                localStream = await getFallbackStream();
                 document.getElementById('previewVideo').srcObject = localStream;
+                
+                // Sync UI toggles if a specific device was missing
+                if (localStream.getVideoTracks().length === 0) {
+                    isVideoStopped = true;
+                    document.getElementById('previewCamIcon').className = 'fa-solid fa-video-slash text-red-400';
+                    document.getElementById('previewCamBtn').classList.add('border', 'border-red-500');
+                }
+                if (localStream.getAudioTracks().length === 0) {
+                    isAudioMuted = true;
+                    document.getElementById('previewMicIcon').className = 'fa-solid fa-microphone-slash text-red-400';
+                    document.getElementById('previewMicBtn').classList.add('border', 'border-red-500');
+                }
+                
                 await populateDeviceLists();
             } catch (error) {
                 console.error("Error accessing media:", error);
                 const errEl = document.getElementById('mediaError');
-                errEl.innerText = "Camera/Microphone access denied. Please check browser permissions.";
+                if (error.name === 'NotFoundError') {
+                    errEl.innerText = "No camera or microphone found. You can still join to watch and listen.";
+                } else {
+                    errEl.innerText = "Camera/Microphone access denied. Please check browser permissions.";
+                }
                 errEl.classList.remove('hidden');
+                await populateDeviceLists(); // Populate dropdowns with "Not Found" messages
             }
         }
 
@@ -680,6 +720,10 @@
                         micSelect.innerHTML += `<option value="${device.deviceId}">${device.label || 'Microphone ' + micCount++}</option>`;
                     }
                 });
+
+                // Inform users if a specific device class is missing entirely
+                if(camSelect.options.length === 0) camSelect.innerHTML = `<option value="">No Camera Found</option>`;
+                if(micSelect.options.length === 0) micSelect.innerHTML = `<option value="">No Microphone Found</option>`;
             } catch (err) {
                 console.error("Could not enumerate devices", err);
             }
@@ -688,13 +732,21 @@
         async function changeDevice() {
             if (localStream) localStream.getTracks().forEach(track => track.stop());
             
-            const camId = document.getElementById('cameraSelect').value;
-            const micId = document.getElementById('micSelect').value;
+            const camSelect = document.getElementById('cameraSelect');
+            const micSelect = document.getElementById('micSelect');
+            const camId = camSelect.value;
+            const micId = micSelect.value;
             
+            // Only request media properties if a device actually exists to prevent NotFound errors
+            const reqVideo = camId ? { deviceId: { exact: camId } } : false;
+            const reqAudio = micId ? { deviceId: { exact: micId } } : false;
+            
+            if (!reqVideo && !reqAudio) return;
+
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({
-                    video: camId ? { deviceId: { exact: camId } } : true,
-                    audio: micId ? { deviceId: { exact: micId } } : true
+                    video: reqVideo,
+                    audio: reqAudio
                 });
                 
                 document.getElementById('previewVideo').srcObject = localStream;
@@ -702,8 +754,8 @@
                     document.getElementById('localVideo').srcObject = localStream;
                 }
                 
-                localStream.getAudioTracks()[0].enabled = !isAudioMuted;
-                localStream.getVideoTracks()[0].enabled = !isVideoStopped;
+                if (localStream.getAudioTracks().length > 0) localStream.getAudioTracks()[0].enabled = !isAudioMuted;
+                if (localStream.getVideoTracks().length > 0) localStream.getVideoTracks()[0].enabled = !isVideoStopped;
             } catch(e) {
                 console.error("Error changing device", e);
             }
@@ -711,7 +763,9 @@
 
         function togglePreviewAudio() {
             isAudioMuted = !isAudioMuted;
-            if (localStream) localStream.getAudioTracks()[0].enabled = !isAudioMuted;
+            if (localStream && localStream.getAudioTracks().length > 0) {
+                localStream.getAudioTracks()[0].enabled = !isAudioMuted;
+            }
             
             const icon = document.getElementById('previewMicIcon');
             const btn = document.getElementById('previewMicBtn');
@@ -727,7 +781,9 @@
 
         function togglePreviewVideo() {
             isVideoStopped = !isVideoStopped;
-            if (localStream) localStream.getVideoTracks()[0].enabled = !isVideoStopped;
+            if (localStream && localStream.getVideoTracks().length > 0) {
+                localStream.getVideoTracks()[0].enabled = !isVideoStopped;
+            }
             
             const icon = document.getElementById('previewCamIcon');
             const btn = document.getElementById('previewCamBtn');
@@ -1245,13 +1301,17 @@
         // -------------------------
         function toggleAudio() {
             isAudioMuted = !isAudioMuted;
-            if (localStream) localStream.getAudioTracks()[0].enabled = !isAudioMuted;
+            if (localStream && localStream.getAudioTracks().length > 0) {
+                localStream.getAudioTracks()[0].enabled = !isAudioMuted;
+            }
             updateMainControlBarUI();
         }
 
         function toggleVideo() {
             isVideoStopped = !isVideoStopped;
-            if (localStream) localStream.getVideoTracks()[0].enabled = !isVideoStopped;
+            if (localStream && localStream.getVideoTracks().length > 0) {
+                localStream.getVideoTracks()[0].enabled = !isVideoStopped;
+            }
             updateMainControlBarUI();
         }
 
