@@ -61,14 +61,17 @@
                         <p class="text-sm sm:text-base text-gray-400">Serverless peer-to-peer connection</p>
                     </div>
 
-                    <!-- Step 1: Connection Panels (Create/Join) -->
+                    <!-- Step 1: Connection Panels (Create/Join/Schedule) -->
                     <div id="connectionPanel" class="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-2xl max-w-lg mx-auto">
                         <div class="flex border-b border-gray-800 text-sm sm:text-base">
                             <button id="tab-host" data-tab="host" class="tab-btn flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition tab-active px-2">
-                                New Meeting
+                                New
                             </button>
                             <button id="tab-join" data-tab="join" class="tab-btn flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition text-gray-400 px-2">
-                                Join Meeting
+                                Join
+                            </button>
+                            <button id="tab-schedule" data-tab="schedule" class="tab-btn flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition text-gray-400 px-2">
+                                Schedule
                             </button>
                         </div>
 
@@ -117,6 +120,56 @@
                                         <button id="continueJoinBtn" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md text-sm sm:text-base">
                                             Continue to Setup
                                         </button>
+                                    </div>
+                                    
+                                    <!-- Recent Meetings History -->
+                                    <div id="recentRoomsContainer" class="mt-6 pt-4 border-t border-gray-700 hidden">
+                                        <h4 class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Recently Joined</h4>
+                                        <ul id="recentRoomsList" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                            <!-- Dynamically injected history -->
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule Panel -->
+                        <div id="panel-schedule" class="p-5 sm:p-6 md:p-8 hidden">
+                            <div class="space-y-4">
+                                <div class="bg-[#242424] p-4 sm:p-5 rounded-lg border border-gray-700">
+                                    <h3 class="font-semibold text-gray-200 mb-3 sm:mb-4 text-center text-sm sm:text-base">Schedule a Future Meeting</h3>
+                                    
+                                    <div id="scheduleFormState">
+                                        <input type="text" id="scheduleTitle" class="w-full bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-white mb-3" placeholder="Meeting Title (e.g. Sync Up)">
+                                        <div class="flex space-x-2 mb-4">
+                                            <input type="date" id="scheduleDate" class="flex-1 w-1/2 bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-300">
+                                            <input type="time" id="scheduleTime" class="flex-1 w-1/2 bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-gray-300">
+                                        </div>
+                                        <button id="generateScheduleBtn" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md text-sm sm:text-base">
+                                            Generate Invite & Save
+                                        </button>
+                                    </div>
+
+                                    <div id="scheduleSuccessState" class="hidden text-center">
+                                        <p class="text-green-400 font-medium mb-2"><i class="fa-solid fa-check-circle mr-2"></i>Scheduled Successfully</p>
+                                        <p class="text-gray-400 text-sm mb-4">Your meeting code is <span id="scheduledCodeDisplay" class="font-bold text-[#0b5cff]"></span></p>
+                                        <div class="flex flex-col space-y-2 mb-4">
+                                            <button id="addToGCalBtn" class="bg-gray-100 text-gray-900 hover:bg-white px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
+                                                <i class="fa-brands fa-google mr-2 text-red-500"></i> Add to Google Calendar
+                                            </button>
+                                            <button id="copyScheduledLinkBtn" class="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
+                                                <i class="fa-solid fa-link mr-2"></i> Copy Invitation Link
+                                            </button>
+                                        </div>
+                                        <button id="scheduleAnotherBtn" class="text-sm text-[#0b5cff] hover:underline">Schedule another</button>
+                                    </div>
+                                    
+                                    <!-- Upcoming Scheduled Meetings -->
+                                    <div id="upcomingMeetingsContainer" class="mt-6 pt-4 border-t border-gray-700 hidden">
+                                        <h4 class="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">Upcoming Meetings</h4>
+                                        <ul id="upcomingMeetingsList" class="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                            <!-- Dynamically injected upcoming list -->
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
@@ -265,9 +318,14 @@
                 <i class="fa-solid fa-arrow-up-from-bracket text-lg sm:text-xl mb-1"></i>
                 <span class="text-[9px] sm:text-[11px] font-medium leading-none text-center">Share</span>
             </button>
-            <button id="setupOverlayBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-blue-400 hover:bg-blue-500/10 hidden sm:flex">
-                <i class="fa-solid fa-qrcode text-base sm:text-xl mb-1"></i>
-                <span class="text-[9px] sm:text-[11px] font-medium leading-none">Codes</span>
+            <!-- In-Call Invite Button -->
+            <button id="inCallInviteBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-blue-400 hover:bg-blue-500/10 hidden sm:flex">
+                <i class="fa-solid fa-user-plus text-base sm:text-xl mb-1"></i>
+                <span class="text-[9px] sm:text-[11px] font-medium leading-none">Invite</span>
+            </button>
+            <button id="setupOverlayBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-400 hover:bg-gray-500/10 hidden sm:flex">
+                <i class="fa-solid fa-gear text-base sm:text-xl mb-1"></i>
+                <span class="text-[9px] sm:text-[11px] font-medium leading-none">Config</span>
             </button>
         </div>
 
@@ -298,6 +356,7 @@
         
         let userName = "Guest";
         let currentRoomId = '';
+        let lastScheduledGCalUrl = '';
         
         // Actions
         let sendNameAction;
@@ -311,6 +370,12 @@
         window.addEventListener('DOMContentLoaded', () => {
             const savedName = localStorage.getItem('zoom_clone_username');
             if (savedName) document.getElementById('userNameInput').value = savedName;
+
+            // Initialize default schedule date/time
+            initScheduleDefaults();
+            // Load history
+            renderHistory();
+            renderScheduled();
 
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('room')) {
@@ -343,14 +408,29 @@
                 btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
             });
 
+            // Connection actions
             document.getElementById('createRoomBtn').addEventListener('click', generateCode);
             document.getElementById('continueHostBtn').addEventListener('click', goToLobby);
             document.getElementById('continueJoinBtn').addEventListener('click', processJoin);
             document.getElementById('backToConnectionBtn').addEventListener('click', backToConnection);
             
+            // Schedule actions
+            document.getElementById('generateScheduleBtn').addEventListener('click', processSchedule);
+            document.getElementById('scheduleAnotherBtn').addEventListener('click', () => {
+                document.getElementById('scheduleSuccessState').classList.add('hidden');
+                document.getElementById('scheduleFormState').classList.remove('hidden');
+                initScheduleDefaults();
+            });
+            document.getElementById('addToGCalBtn').addEventListener('click', () => window.open(lastScheduledGCalUrl, '_blank'));
+            document.getElementById('copyScheduledLinkBtn').addEventListener('click', copyScheduledInviteLink);
+            
             document.getElementById('copyRoomBtn').addEventListener('click', copyRoomId);
             document.getElementById('copyLinkBtn').addEventListener('click', copyInviteLink);
             
+            // History/Upcoming Delegation
+            document.getElementById('recentRoomsList').addEventListener('click', handleHistoryClick);
+            document.getElementById('upcomingMeetingsList').addEventListener('click', handleUpcomingClick);
+
             // Main Controls Event Listeners
             document.getElementById('micBtn').addEventListener('click', toggleAudio);
             document.getElementById('camBtn').addEventListener('click', toggleVideo);
@@ -358,6 +438,7 @@
             document.getElementById('closeChatBtn').addEventListener('click', toggleChat);
             document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
             document.getElementById('shareBtn').addEventListener('click', toggleScreenShare);
+            document.getElementById('inCallInviteBtn').addEventListener('click', copyInviteLink);
             document.getElementById('setupOverlayBtn').addEventListener('click', toggleSetupOverlay);
             document.getElementById('fullscreenBtn').addEventListener('click', () => toggleFullscreen('remoteVideoContainer'));
             document.getElementById('endCallBtn').addEventListener('click', endCall);
@@ -365,6 +446,141 @@
             // Start Lobby Preview immediately
             initLobby();
         });
+
+        // -------------------------
+        // FEATURE: HISTORY & SCHEDULE STATE
+        // -------------------------
+        function initScheduleDefaults() {
+            const now = new Date();
+            document.getElementById('scheduleDate').value = now.toISOString().split('T')[0];
+            const hours = String((now.getHours() + 1) % 24).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('scheduleTime').value = `${hours}:${mins}`;
+            document.getElementById('scheduleTitle').value = '';
+        }
+
+        function addToHistory(roomId) {
+            let history = JSON.parse(localStorage.getItem('zoom_clone_history') || '[]');
+            history = history.filter(item => item.roomId !== roomId);
+            history.unshift({ roomId, timestamp: Date.now() });
+            if (history.length > 5) history.pop();
+            localStorage.setItem('zoom_clone_history', JSON.stringify(history));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            let history = JSON.parse(localStorage.getItem('zoom_clone_history') || '[]');
+            const container = document.getElementById('recentRoomsContainer');
+            const list = document.getElementById('recentRoomsList');
+            
+            if (history.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            
+            list.innerHTML = history.map(item => `
+                <li class="flex justify-between items-center bg-[#2a2a2a] p-2.5 rounded-lg cursor-pointer hover:bg-gray-700 border border-gray-700 transition" data-room="${item.roomId}">
+                    <div class="flex items-center">
+                        <i class="fa-solid fa-clock-rotate-left text-gray-500 mr-3"></i>
+                        <span class="font-mono text-blue-400 font-bold tracking-widest">${item.roomId}</span>
+                    </div>
+                    <span class="text-[10px] text-gray-400">${new Date(item.timestamp).toLocaleDateString()}</span>
+                </li>
+            `).join('');
+        }
+
+        function handleHistoryClick(e) {
+            const li = e.target.closest('li');
+            if (li && li.dataset.room) {
+                document.getElementById('roomInput').value = li.dataset.room;
+                processJoin();
+            }
+        }
+
+        function processSchedule() {
+            const titleInput = document.getElementById('scheduleTitle').value.trim();
+            const title = titleInput || 'P2P Video Meeting';
+            const date = document.getElementById('scheduleDate').value;
+            const time = document.getElementById('scheduleTime').value;
+            
+            if(!date || !time) {
+                showToast("Please provide a valid date and time.", true);
+                return;
+            }
+
+            const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const link = window.location.origin + window.location.pathname + '?room=' + roomId;
+            currentRoomId = roomId;
+
+            // Generate Google Calendar Link
+            const startDateTime = new Date(`${date}T${time}`);
+            const endDateTime = new Date(startDateTime.getTime() + 60*60*1000); // 1 hr default
+            
+            const formatGCalDate = (d) => d.toISOString().replace(/-|:|\.\d\d\d/g, '');
+            const datesStr = `${formatGCalDate(startDateTime)}/${formatGCalDate(endDateTime)}`;
+            
+            lastScheduledGCalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&details=${encodeURIComponent("Join meeting here:\n" + link)}&dates=${datesStr}`;
+
+            // Save scheduled
+            let scheduled = JSON.parse(localStorage.getItem('zoom_clone_scheduled') || '[]');
+            scheduled.push({ title, date, time, roomId, timestamp: startDateTime.getTime() });
+            scheduled.sort((a,b) => a.timestamp - b.timestamp); // sort chronological
+            localStorage.setItem('zoom_clone_scheduled', JSON.stringify(scheduled));
+
+            // Update UI
+            document.getElementById('scheduleFormState').classList.add('hidden');
+            document.getElementById('scheduleSuccessState').classList.remove('hidden');
+            document.getElementById('scheduledCodeDisplay').innerText = roomId;
+            
+            renderScheduled();
+        }
+
+        function renderScheduled() {
+            let scheduled = JSON.parse(localStorage.getItem('zoom_clone_scheduled') || '[]');
+            // Filter out old ones (older than 1 day)
+            scheduled = scheduled.filter(item => item.timestamp > Date.now() - 24*60*60*1000);
+            localStorage.setItem('zoom_clone_scheduled', JSON.stringify(scheduled));
+
+            const container = document.getElementById('upcomingMeetingsContainer');
+            const list = document.getElementById('upcomingMeetingsList');
+            
+            if (scheduled.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+            container.classList.remove('hidden');
+            
+            list.innerHTML = scheduled.map(item => {
+                const dateObj = new Date(item.timestamp);
+                const isToday = dateObj.toDateString() === new Date().toDateString();
+                const displayDate = isToday ? "Today" : dateObj.toLocaleDateString(undefined, {month: 'short', day: 'numeric'});
+                
+                return `
+                <li class="flex justify-between items-center bg-[#2a2a2a] p-2.5 rounded-lg border border-gray-700 transition">
+                    <div class="flex flex-col">
+                        <span class="font-semibold text-sm text-gray-200 truncate max-w-[150px] sm:max-w-[200px]">${item.title}</span>
+                        <span class="text-[10px] text-gray-400">${displayDate} at ${item.time} • <span class="font-mono text-blue-400">${item.roomId}</span></span>
+                    </div>
+                    <button class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-medium start-scheduled-btn" data-room="${item.roomId}">Start</button>
+                </li>
+            `}).join('');
+        }
+
+        function handleUpcomingClick(e) {
+            const btn = e.target.closest('.start-scheduled-btn');
+            if (btn && btn.dataset.room) {
+                currentRoomId = btn.dataset.room;
+                goToLobby();
+            }
+        }
+
+        function copyScheduledInviteLink() {
+            const link = window.location.origin + window.location.pathname + '?room=' + currentRoomId;
+            const text = `Join my meeting:\nLink: ${link}\nMeeting Code: ${currentRoomId}`;
+            copyTextSecurely(text, "Invitation Copied!", "copyScheduledLinkBtn", '<i class="fa-solid fa-link mr-2"></i> Copy Invitation Link');
+        }
+
 
         // -------------------------
         // FEATURE 1: PRE-CALL LOBBY & DEVICES
@@ -659,6 +875,9 @@
         }
 
         function goToLobby() {
+            if (currentRoomId) {
+                addToHistory(currentRoomId);
+            }
             document.getElementById('connectionPanel').classList.add('hidden');
             document.getElementById('step1Panel').classList.remove('hidden');
             document.getElementById('mainTitle').innerText = "Configure Devices";
@@ -871,7 +1090,8 @@
 
         function copyInviteLink() {
             const link = window.location.origin + window.location.pathname + '?room=' + currentRoomId;
-            copyTextSecurely(link, "Invite Link copied!", 'copyLinkBtn', '<i class="fa-solid fa-link mr-2"></i>Copy Link');
+            const originalHtml = this.innerHTML || '<i class="fa-solid fa-link mr-2"></i>Copy Link';
+            copyTextSecurely(link, "Invite Link copied!", this.id, originalHtml);
         }
 
         function copyTextSecurely(text, successMsg, btnId, originalHtml) {
@@ -883,9 +1103,15 @@
             try {
                 document.execCommand('copy');
                 showToast(successMsg);
-                const btn = document.getElementById(btnId);
-                btn.innerHTML = '<i class="fa-solid fa-check mr-2 text-green-400"></i>Copied';
-                setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+                if(btnId) {
+                    const btn = document.getElementById(btnId);
+                    const isIconOnly = btn.querySelector('i') && btn.querySelectorAll('span').length > 0 && !btn.querySelector('span').innerText.includes('Copy');
+                    
+                    if(!isIconOnly) {
+                         btn.innerHTML = '<i class="fa-solid fa-check mr-2 text-green-400"></i>Copied';
+                         setTimeout(() => { btn.innerHTML = originalHtml; }, 2000);
+                    }
+                }
             } catch (err) {
                 showToast("Failed to copy", true);
             } finally {
@@ -908,26 +1134,23 @@
         }
 
         function switchTab(tab) {
-            const panelHost = document.getElementById('panel-host');
-            const panelJoin = document.getElementById('panel-join');
-            const tabHost = document.getElementById('tab-host');
-            const tabJoin = document.getElementById('tab-join');
-
-            if (tab === 'host') {
-                panelHost.classList.remove('hidden');
-                panelJoin.classList.add('hidden');
-                tabHost.classList.add('tab-active', 'text-[#0b5cff]');
-                tabHost.classList.remove('text-gray-400');
-                tabJoin.classList.remove('tab-active', 'text-[#0b5cff]');
-                tabJoin.classList.add('text-gray-400');
-            } else {
-                panelJoin.classList.remove('hidden');
-                panelHost.classList.add('hidden');
-                tabJoin.classList.add('tab-active', 'text-[#0b5cff]');
-                tabJoin.classList.remove('text-gray-400');
-                tabHost.classList.remove('tab-active', 'text-[#0b5cff]');
-                tabHost.classList.add('text-gray-400');
-            }
+            const tabs = ['host', 'join', 'schedule'];
+            tabs.forEach(t => {
+                const panel = document.getElementById(`panel-${t}`);
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    panel.classList.remove('hidden');
+                    btn.classList.add('tab-active', 'text-[#0b5cff]');
+                    btn.classList.remove('text-gray-400');
+                } else {
+                    panel.classList.add('hidden');
+                    btn.classList.remove('tab-active', 'text-[#0b5cff]');
+                    btn.classList.add('text-gray-400');
+                }
+            });
+            
+            if (tab === 'join') renderHistory();
+            if (tab === 'schedule') renderScheduled();
         }
     </script>
 </body>
