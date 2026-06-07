@@ -25,6 +25,12 @@
         
         /* Active Speaker Highlight transition */
         .speaker-highlight { transition: box-shadow 0.1s ease-in-out; }
+        
+        /* Layout transition for main content when chat opens */
+        .main-chat-open { margin-right: 20rem; /* 320px (w-80) */ }
+        @media (max-width: 640px) {
+            .main-chat-open { margin-right: 0; }
+        }
     </style>
 </head>
 <body class="text-white min-h-[100dvh] h-[100dvh] font-sans selection:bg-blue-500 selection:text-white flex flex-col overflow-hidden">
@@ -45,69 +51,23 @@
     <div class="flex-grow flex overflow-hidden relative">
         
         <!-- Main Video Area -->
-        <main class="flex-grow relative flex items-center justify-center p-2 sm:p-4 pt-14 sm:pt-16 pb-20 sm:pb-24 bg-[#242424] transition-all duration-300">
+        <main id="mainContent" class="flex-grow relative flex items-center justify-center p-2 sm:p-4 pt-14 sm:pt-16 pb-20 sm:pb-24 bg-[#242424] transition-all duration-300">
             
             <!-- Setup/Connection Overlay -->
             <div id="setupOverlay" class="absolute inset-0 z-20 flex items-center justify-center bg-[#242424]/95 backdrop-blur-md overflow-y-auto p-3 sm:p-4">
                 <div class="max-w-2xl w-full my-auto">
                     <div class="text-center mb-4 mt-4 sm:mt-0">
-                        <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Join Meeting</h1>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2" id="mainTitle">P2P Video Meeting</h1>
                         <p class="text-sm sm:text-base text-gray-400">Serverless peer-to-peer connection</p>
                     </div>
 
-                    <!-- Step 1: Pre-call Lobby / Device Selection -->
-                    <div id="step1Panel" class="bg-[#1a1a1a] p-5 sm:p-8 rounded-xl border border-gray-800 shadow-2xl max-w-lg mx-auto">
-                        <h2 class="text-lg font-semibold mb-3 text-gray-200 text-center">Audio & Video Preview</h2>
-                        
-                        <!-- Video Preview -->
-                        <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden mb-4 border border-gray-700 speaker-highlight" id="previewContainer">
-                            <video id="previewVideo" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline muted></video>
-                            <div class="absolute bottom-2 left-0 right-0 flex justify-center space-x-3">
-                                <button onclick="togglePreviewAudio()" id="previewMicBtn" class="bg-gray-800/80 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition">
-                                    <i class="fa-solid fa-microphone" id="previewMicIcon"></i>
-                                </button>
-                                <button onclick="togglePreviewVideo()" id="previewCamBtn" class="bg-gray-800/80 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition">
-                                    <i class="fa-solid fa-video" id="previewCamIcon"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Device Selection Dropdowns -->
-                        <div class="grid grid-cols-1 gap-3 mb-5 text-sm">
-                            <div>
-                                <label class="block text-gray-400 text-xs font-medium mb-1">Microphone</label>
-                                <div class="relative">
-                                    <i class="fa-solid fa-microphone absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
-                                    <select id="micSelect" onchange="changeDevice()" class="w-full bg-black border border-gray-700 rounded-lg py-2 pl-8 pr-3 text-gray-200 focus:outline-none focus:border-blue-500 appearance-none"></select>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-gray-400 text-xs font-medium mb-1">Camera</label>
-                                <div class="relative">
-                                    <i class="fa-solid fa-video absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
-                                    <select id="cameraSelect" onchange="changeDevice()" class="w-full bg-black border border-gray-700 rounded-lg py-2 pl-8 pr-3 text-gray-200 focus:outline-none focus:border-blue-500 appearance-none"></select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-5">
-                            <label class="block text-gray-400 text-xs font-medium mb-1">Your Name</label>
-                            <input type="text" id="userNameInput" class="w-full bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-white" placeholder="e.g. Jane Doe" autocomplete="off">
-                        </div>
-
-                        <button id="startBtn" onclick="confirmLobby()" class="bg-[#0b5cff] hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition shadow-lg w-full">
-                            Join Room
-                        </button>
-                        <p id="mediaError" class="text-red-400 mt-4 text-xs text-center hidden"></p>
-                    </div>
-
-                    <!-- Step 2: Connection Panels -->
-                    <div id="connectionPanel" class="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-2xl hidden max-w-lg mx-auto">
+                    <!-- Step 1: Connection Panels (Create/Join) -->
+                    <div id="connectionPanel" class="bg-[#1a1a1a] rounded-xl border border-gray-800 shadow-2xl max-w-lg mx-auto">
                         <div class="flex border-b border-gray-800 text-sm sm:text-base">
-                            <button onclick="switchTab('host')" id="tab-host" class="flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition tab-active px-2">
+                            <button id="tab-host" data-tab="host" class="tab-btn flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition tab-active px-2">
                                 New Meeting
                             </button>
-                            <button onclick="switchTab('join')" id="tab-join" class="flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition text-gray-400 px-2">
+                            <button id="tab-join" data-tab="join" class="tab-btn flex-1 py-3 sm:py-4 text-center font-medium hover:bg-gray-800 transition text-gray-400 px-2">
                                 Join Meeting
                             </button>
                         </div>
@@ -120,7 +80,7 @@
                                     
                                     <div id="preGenerateState">
                                         <p class="text-xs sm:text-sm text-gray-400 mb-4 mt-2">Generate a code to invite participants via decentralized signaling.</p>
-                                        <button id="createRoomBtn" onclick="createRoom()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 shadow-md w-full text-sm sm:text-base">
+                                        <button id="createRoomBtn" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 shadow-md w-full text-sm sm:text-base">
                                             Generate Meeting Code
                                         </button>
                                     </div>
@@ -129,16 +89,19 @@
                                         <div class="flex justify-center items-center space-x-2 sm:space-x-3 mb-4 mt-2">
                                             <span id="roomIdDisplay" class="text-3xl sm:text-4xl font-mono text-[#0b5cff] tracking-widest font-bold">------</span>
                                         </div>
-                                        <p class="text-xs sm:text-sm text-gray-400 mb-5">Waiting for participant to join...</p>
+                                        <p class="text-xs sm:text-sm text-gray-400 mb-5">Share this code with others so they can join.</p>
                                         
-                                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full">
-                                            <button onclick="copyRoomId()" id="copyRoomBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
+                                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full mb-4">
+                                            <button id="copyRoomBtn" class="flex-1 bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
                                                 <i class="fa-solid fa-copy mr-2"></i>Copy Code
                                             </button>
-                                            <button onclick="copyInviteLink()" id="copyLinkBtn" class="flex-1 bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
+                                            <button id="copyLinkBtn" class="flex-1 bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg font-medium transition shadow-md text-sm flex items-center justify-center">
                                                 <i class="fa-solid fa-link mr-2"></i>Copy Link
                                             </button>
                                         </div>
+                                        <button id="continueHostBtn" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 shadow-md w-full text-sm sm:text-base">
+                                            Continue to Setup
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -151,13 +114,64 @@
                                     <h3 class="font-semibold text-gray-200 mb-3 sm:mb-4 text-center text-sm sm:text-base">Enter Meeting Code</h3>
                                     <div class="space-y-4">
                                         <input type="text" id="roomInput" class="w-full bg-black border border-gray-700 rounded-lg p-3 text-center text-xl tracking-widest text-blue-400 focus:outline-none focus:border-blue-500 font-mono uppercase" placeholder="XYZ123" maxlength="6">
-                                        <button id="joinRoomBtn" onclick="joinRoom()" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md text-sm sm:text-base">
-                                            Join Meeting
+                                        <button id="continueJoinBtn" class="bg-[#0b5cff] hover:bg-blue-600 px-5 py-2.5 rounded-lg font-medium transition duration-200 w-full shadow-md text-sm sm:text-base">
+                                            Continue to Setup
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Step 2: Pre-call Lobby / Device Selection -->
+                    <div id="step1Panel" class="bg-[#1a1a1a] p-5 sm:p-8 rounded-xl border border-gray-800 shadow-2xl hidden max-w-lg mx-auto">
+                        <div class="flex items-center justify-center mb-3 relative">
+                            <button id="backToConnectionBtn" class="absolute left-0 text-gray-400 hover:text-white transition">
+                                <i class="fa-solid fa-arrow-left"></i>
+                            </button>
+                            <h2 class="text-lg font-semibold text-gray-200">Audio & Video Setup</h2>
+                        </div>
+                        
+                        <!-- Video Preview -->
+                        <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden mb-4 border border-gray-700 speaker-highlight" id="previewContainer">
+                            <video id="previewVideo" class="w-full h-full object-cover transform scale-x-[-1]" autoplay playsinline muted></video>
+                            <div class="absolute bottom-2 left-0 right-0 flex justify-center space-x-3">
+                                <button id="previewMicBtn" aria-label="Toggle Preview Microphone" class="bg-gray-800/80 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition">
+                                    <i class="fa-solid fa-microphone" id="previewMicIcon"></i>
+                                </button>
+                                <button id="previewCamBtn" aria-label="Toggle Preview Camera" class="bg-gray-800/80 hover:bg-gray-700 text-white w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-sm transition">
+                                    <i class="fa-solid fa-video" id="previewCamIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Device Selection Dropdowns -->
+                        <div class="grid grid-cols-1 gap-3 mb-5 text-sm">
+                            <div>
+                                <label for="micSelect" class="block text-gray-400 text-xs font-medium mb-1">Microphone</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-microphone absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
+                                    <select id="micSelect" class="w-full bg-black border border-gray-700 rounded-lg py-2 pl-8 pr-3 text-gray-200 focus:outline-none focus:border-blue-500 appearance-none"></select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="cameraSelect" class="block text-gray-400 text-xs font-medium mb-1">Camera</label>
+                                <div class="relative">
+                                    <i class="fa-solid fa-video absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xs"></i>
+                                    <select id="cameraSelect" class="w-full bg-black border border-gray-700 rounded-lg py-2 pl-8 pr-3 text-gray-200 focus:outline-none focus:border-blue-500 appearance-none"></select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-5">
+                            <label for="userNameInput" class="block text-gray-400 text-xs font-medium mb-1">Your Name</label>
+                            <input type="text" id="userNameInput" class="w-full bg-black border border-gray-700 rounded-lg p-2.5 text-sm focus:outline-none focus:border-blue-500 text-white" placeholder="e.g. Jane Doe" autocomplete="off">
+                        </div>
+
+                        <button id="startBtn" class="bg-[#0b5cff] hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition shadow-lg w-full flex justify-center items-center">
+                            Enter Meeting
+                        </button>
+                        <p id="mediaError" class="text-red-400 mt-4 text-xs text-center hidden"></p>
                     </div>
                 </div>
             </div>
@@ -170,7 +184,7 @@
                     <video id="remoteVideo" class="w-full h-full object-cover md:object-contain" autoplay playsinline></video>
                     
                     <!-- Fullscreen Button -->
-                    <button onclick="toggleFullscreen('remoteVideoContainer')" class="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition z-10 hidden" id="fullscreenBtn">
+                    <button id="fullscreenBtn" aria-label="Toggle Fullscreen" class="absolute top-4 right-4 bg-black/60 hover:bg-black/80 text-white w-8 h-8 rounded flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition z-10 hidden">
                         <i class="fa-solid fa-expand"></i>
                     </button>
                     
@@ -202,7 +216,7 @@
             <!-- Chat Header -->
             <div class="p-4 border-b border-[#333] flex justify-between items-center bg-[#242424]">
                 <h3 class="font-semibold text-white text-sm sm:text-base"><i class="fa-regular fa-comment-dots mr-2"></i>Meeting Chat</h3>
-                <button onclick="toggleChat()" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button id="closeChatBtn" aria-label="Close Chat" class="text-gray-400 hover:text-white transition"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             
             <!-- Messages Area -->
@@ -215,7 +229,7 @@
             <div class="p-3 border-t border-[#333] bg-[#242424]">
                 <div class="flex items-center space-x-2 bg-black border border-gray-700 rounded-lg p-1 pr-2">
                     <input type="text" id="chatInput" class="flex-grow bg-transparent border-none text-white text-sm px-3 py-2 focus:outline-none" placeholder="Type message here...">
-                    <button onclick="sendChatMessage()" class="text-[#0b5cff] hover:text-blue-400 p-2 transition">
+                    <button id="sendChatBtn" aria-label="Send Message" class="text-[#0b5cff] hover:text-blue-400 p-2 transition">
                         <i class="fa-solid fa-paper-plane"></i>
                     </button>
                 </div>
@@ -227,11 +241,11 @@
     <!-- Bottom Control Bar -->
     <footer class="zoom-control-bar absolute bottom-0 w-full h-16 sm:h-20 border-t border-[#333] flex items-center justify-between px-2 sm:px-6 z-30">
         <div class="flex items-center space-x-0.5 sm:space-x-2">
-            <button onclick="toggleAudio()" id="micBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300">
+            <button id="micBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300">
                 <i class="fa-solid fa-microphone text-base sm:text-xl mb-1" id="micIcon"></i>
                 <span class="text-[9px] sm:text-[11px] font-medium leading-none" id="micText">Mute</span>
             </button>
-            <button onclick="toggleVideo()" id="camBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300">
+            <button id="camBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300">
                 <i class="fa-solid fa-video text-base sm:text-xl mb-1" id="camIcon"></i>
                 <span class="text-[9px] sm:text-[11px] font-medium leading-none text-center" id="camText">Stop Video</span>
             </button>
@@ -242,23 +256,23 @@
                 <i class="fa-solid fa-user-group text-xl mb-1"></i>
                 <span class="text-[11px] font-medium leading-none">Participants</span>
             </button>
-            <button onclick="toggleChat()" id="chatBtnIcon" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300 relative">
+            <button id="chatBtnIcon" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-gray-300 relative">
                 <i class="fa-regular fa-comment-dots text-xl mb-1"></i>
                 <span class="text-[9px] sm:text-[11px] font-medium leading-none">Chat</span>
                 <span id="chatNotificationBadge" class="absolute top-1 right-2 w-2.5 h-2.5 bg-red-500 rounded-full hidden"></span>
             </button>
-            <button onclick="toggleScreenShare()" id="shareBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-green-500 hover:bg-green-500/10">
+            <button id="shareBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-green-500 hover:bg-green-500/10">
                 <i class="fa-solid fa-arrow-up-from-bracket text-lg sm:text-xl mb-1"></i>
                 <span class="text-[9px] sm:text-[11px] font-medium leading-none text-center">Share</span>
             </button>
-            <button onclick="toggleSetupOverlay()" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-blue-400 hover:bg-blue-500/10 hidden sm:flex">
+            <button id="setupOverlayBtn" class="zoom-btn flex flex-col items-center justify-center w-12 h-14 sm:w-16 sm:h-16 rounded-lg text-blue-400 hover:bg-blue-500/10 hidden sm:flex">
                 <i class="fa-solid fa-qrcode text-base sm:text-xl mb-1"></i>
                 <span class="text-[9px] sm:text-[11px] font-medium leading-none">Codes</span>
             </button>
         </div>
 
         <div>
-            <button onclick="endCall()" class="bg-[#ff4d4f] hover:bg-red-600 text-white font-semibold text-[11px] sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg transition duration-200">
+            <button id="endCallBtn" class="bg-[#ff4d4f] hover:bg-red-600 text-white font-semibold text-[11px] sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-md sm:rounded-lg transition duration-200">
                 Leave
             </button>
         </div>
@@ -293,7 +307,7 @@
         // Audio Context for Active Speaker detection
         let audioContext;
 
-        // Initialize App
+        // --- Initialization & Event Listeners ---
         window.addEventListener('DOMContentLoaded', () => {
             const savedName = localStorage.getItem('zoom_clone_username');
             if (savedName) document.getElementById('userNameInput').value = savedName;
@@ -301,16 +315,52 @@
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('room')) {
                 document.getElementById('roomInput').value = urlParams.get('room');
+                currentRoomId = urlParams.get('room');
                 switchTab('join');
+                goToLobby(); // Skip connection panel if link has code
             }
 
+            // Keyboard events
             document.getElementById('userNameInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') confirmLobby();
             });
-            
+            document.getElementById('roomInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') processJoin();
+            });
             document.getElementById('chatInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendChatMessage();
             });
+
+            // Button Event Listeners
+            document.getElementById('previewMicBtn').addEventListener('click', togglePreviewAudio);
+            document.getElementById('previewCamBtn').addEventListener('click', togglePreviewVideo);
+            document.getElementById('micSelect').addEventListener('change', changeDevice);
+            document.getElementById('cameraSelect').addEventListener('change', changeDevice);
+            document.getElementById('startBtn').addEventListener('click', confirmLobby);
+            
+            // Tab Event Listeners
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
+            });
+
+            document.getElementById('createRoomBtn').addEventListener('click', generateCode);
+            document.getElementById('continueHostBtn').addEventListener('click', goToLobby);
+            document.getElementById('continueJoinBtn').addEventListener('click', processJoin);
+            document.getElementById('backToConnectionBtn').addEventListener('click', backToConnection);
+            
+            document.getElementById('copyRoomBtn').addEventListener('click', copyRoomId);
+            document.getElementById('copyLinkBtn').addEventListener('click', copyInviteLink);
+            
+            // Main Controls Event Listeners
+            document.getElementById('micBtn').addEventListener('click', toggleAudio);
+            document.getElementById('camBtn').addEventListener('click', toggleVideo);
+            document.getElementById('chatBtnIcon').addEventListener('click', toggleChat);
+            document.getElementById('closeChatBtn').addEventListener('click', toggleChat);
+            document.getElementById('sendChatBtn').addEventListener('click', sendChatMessage);
+            document.getElementById('shareBtn').addEventListener('click', toggleScreenShare);
+            document.getElementById('setupOverlayBtn').addEventListener('click', toggleSetupOverlay);
+            document.getElementById('fullscreenBtn').addEventListener('click', () => toggleFullscreen('remoteVideoContainer'));
+            document.getElementById('endCallBtn').addEventListener('click', endCall);
 
             // Start Lobby Preview immediately
             initLobby();
@@ -321,7 +371,6 @@
         // -------------------------
         async function initLobby() {
             try {
-                // Initial request to get permissions
                 localStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: true });
                 document.getElementById('previewVideo').srcObject = localStream;
                 await populateDeviceLists();
@@ -370,6 +419,9 @@
                 });
                 
                 document.getElementById('previewVideo').srcObject = localStream;
+                if(document.getElementById('setupOverlay').classList.contains('hidden')){
+                    document.getElementById('localVideo').srcObject = localStream;
+                }
                 
                 // Re-apply mute/stop states to new stream
                 localStream.getAudioTracks()[0].enabled = !isAudioMuted;
@@ -393,7 +445,6 @@
                 icon.className = 'fa-solid fa-microphone';
                 btn.classList.remove('border', 'border-red-500');
             }
-            // Sync main control bar
             updateMainControlBarUI();
         }
 
@@ -410,7 +461,6 @@
                 icon.className = 'fa-solid fa-video';
                 btn.classList.remove('border', 'border-red-500');
             }
-            // Sync main control bar
             updateMainControlBarUI();
         }
 
@@ -422,27 +472,25 @@
                 return;
             }
             
-            // Save username for future
+            const btn = document.getElementById('startBtn');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Connecting...';
+            btn.disabled = true;
+            
             userName = nameInput;
             localStorage.setItem('zoom_clone_username', userName);
             
             document.getElementById('localNameLabel').innerText = userName + " (You)";
-            
-            // Move stream to main local video
             document.getElementById('localVideo').srcObject = localStream;
             
-            // Switch UI panels
-            document.getElementById('step1Panel').classList.add('hidden');
-            document.getElementById('connectionPanel').classList.remove('hidden');
-
-            // Auto join if URL had a room code
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('room')) {
-                joinRoom();
-            }
+            // Set URL State
+            window.history.pushState({}, '', '?room=' + currentRoomId);
             
-            // Initialize AudioContext for Speaker Detection now that user interacted
+            // Close overlays
+            document.getElementById('setupOverlay').classList.add('hidden');
+            
+            // Connect
             initAudioContext();
+            initDecentralizedRoom(currentRoomId);
         }
 
         // -------------------------
@@ -451,10 +499,11 @@
         function initAudioContext() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                
-                // Monitor Local Stream
-                if (localStream) monitorSpeaker(localStream, 'localVideoContainer');
             }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            if (localStream) monitorSpeaker(localStream, 'localVideoContainer');
         }
 
         function monitorSpeaker(stream, elementId) {
@@ -463,25 +512,36 @@
                 const source = audioContext.createMediaStreamSource(stream);
                 const analyser = audioContext.createAnalyser();
                 analyser.fftSize = 512;
-                analyser.smoothingTimeConstant = 0.1;
+                analyser.smoothingTimeConstant = 0.4;
                 source.connect(analyser);
                 
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
                 const element = document.getElementById(elementId);
+                let animationId;
 
                 function checkVolume() {
-                    analyser.getByteFrequencyData(dataArray);
-                    let sum = 0;
-                    for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-                    let average = sum / dataArray.length;
+                    // Stop analyzing if stream gets inactive
+                    if (!stream.active) {
+                        element.classList.remove('ring-4', 'ring-[#0b5cff]');
+                        cancelAnimationFrame(animationId);
+                        return;
+                    }
 
-                    // Threshold for speech detection
-                    if (average > 15) {
+                    analyser.getByteFrequencyData(dataArray);
+                    
+                    // Use RMS (Root Mean Square) for more accurate volume representation
+                    let sumSquares = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        sumSquares += dataArray[i] * dataArray[i];
+                    }
+                    let rms = Math.sqrt(sumSquares / dataArray.length);
+
+                    if (rms > 25) { // Threshold adjusted for RMS
                         element.classList.add('ring-4', 'ring-[#0b5cff]');
                     } else {
                         element.classList.remove('ring-4', 'ring-[#0b5cff]');
                     }
-                    requestAnimationFrame(checkVolume);
+                    animationId = requestAnimationFrame(checkVolume);
                 }
                 checkVolume();
             } catch (e) {
@@ -501,7 +561,6 @@
 
             room = joinTrysteroRoom({ appId: APP_NAMESPACE }, roomId);
             
-            // Actions
             const [sendName, getName] = room.makeAction('name');
             sendNameAction = sendName;
             
@@ -511,12 +570,12 @@
             const [sendScreenState, getScreenState] = room.makeAction('screenState');
             sendScreenStateAction = sendScreenState;
 
-            // Events
             room.onPeerJoin(peerId => {
                 showToast("Peer discovered! Establishing connection...");
                 if (localStream) room.addStream(localStream, peerId);
                 if (isScreenSharing && screenStream) room.addStream(screenStream, peerId);
                 
+                // Slight delay ensures the data channel is fully ready for custom actions
                 setTimeout(() => sendNameAction(userName, peerId), 500);
             });
 
@@ -535,18 +594,12 @@
             
             getScreenState((data, peerId) => {
                 if (!data.isSharing && remoteStream) {
-                    // Revert back to camera stream if screen share was stopped
                     document.getElementById('remoteVideo').srcObject = remoteStream;
                 }
             });
 
             room.onPeerStream((stream, peerId) => {
-                // Determine if this is a screen share stream or camera stream.
-                // Usually screen streams have no audio tracks or different characteristics,
-                // but setting the latest stream to the main video is generally safe.
-                
                 if (stream.getVideoTracks().length > 0) {
-                    // Check if it's likely a camera stream (has audio)
                     if (stream.getAudioTracks().length > 0) {
                         remoteStream = stream; // Save primary cam stream
                         monitorSpeaker(stream, 'remoteVideoContainer');
@@ -585,35 +638,36 @@
         // -------------------------
         // HOST & JOIN FLOWS
         // -------------------------
-        function createRoom() {
+        function generateCode() {
             const roomId = Math.random().toString(36).substring(2, 8).toUpperCase();
             currentRoomId = roomId;
-            
-            window.history.pushState({}, '', '?room=' + roomId);
             
             document.getElementById('roomIdDisplay').innerText = roomId;
             document.getElementById('preGenerateState').classList.add('hidden');
             document.getElementById('postGenerateState').classList.remove('hidden');
-            
-            initDecentralizedRoom(roomId);
-            showToast("Listening on network...");
+            showToast("Meeting code generated");
         }
 
-        function joinRoom() {
+        function processJoin() {
             const roomId = document.getElementById('roomInput').value.trim().toUpperCase();
             if (!roomId || roomId.length < 6) {
                 showToast("Please enter a valid 6-character code.", true);
                 return;
             }
             currentRoomId = roomId;
-            
-            window.history.pushState({}, '', '?room=' + roomId);
+            goToLobby();
+        }
 
-            const btn = document.getElementById('joinRoomBtn');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Searching...';
-            btn.disabled = true;
-
-            initDecentralizedRoom(roomId);
+        function goToLobby() {
+            document.getElementById('connectionPanel').classList.add('hidden');
+            document.getElementById('step1Panel').classList.remove('hidden');
+            document.getElementById('mainTitle').innerText = "Configure Devices";
+        }
+        
+        function backToConnection() {
+            document.getElementById('step1Panel').classList.add('hidden');
+            document.getElementById('connectionPanel').classList.remove('hidden');
+            document.getElementById('mainTitle').innerText = "P2P Video Meeting";
         }
 
         // -------------------------
@@ -636,7 +690,6 @@
                     btn.classList.add('bg-green-500/20');
                     btn.querySelector('span').innerText = "Stop Share";
                     
-                    // Show locally on PiP (don't mirror screen)
                     const localVidElem = document.getElementById('localVideo');
                     localVidElem.srcObject = screenStream;
                     localVidElem.classList.remove('scale-x-[-1]');
@@ -644,9 +697,7 @@
                     showToast("Screen sharing started");
 
                     // Handle native browser "Stop sharing" button
-                    screenStream.getVideoTracks()[0].onended = () => {
-                        stopScreenSharing();
-                    };
+                    screenStream.getVideoTracks()[0].onended = stopScreenSharing;
                 } catch (e) {
                     showToast("Screen share cancelled", true);
                 }
@@ -668,7 +719,6 @@
             btn.classList.remove('bg-green-500/20');
             btn.querySelector('span').innerText = "Share";
             
-            // Revert local PiP to camera
             const localVidElem = document.getElementById('localVideo');
             localVidElem.srcObject = localStream;
             localVidElem.classList.add('scale-x-[-1]');
@@ -676,25 +726,22 @@
             showToast("Screen sharing stopped");
         }
 
-
         // -------------------------
         // FEATURE: TEXT CHAT
         // -------------------------
         function toggleChat() {
             const sidebar = document.getElementById('chatSidebar');
+            const mainContent = document.getElementById('mainContent');
+            
             if (sidebar.classList.contains('chat-closed')) {
                 sidebar.classList.remove('chat-closed');
                 sidebar.classList.add('chat-open');
+                mainContent.classList.add('main-chat-open');
                 document.getElementById('chatNotificationBadge').classList.add('hidden');
-                
-                // Adjust main video area width on desktop
-                if(window.innerWidth >= 640) {
-                    document.querySelector('main').style.marginRight = '320px';
-                }
             } else {
                 sidebar.classList.add('chat-closed');
                 sidebar.classList.remove('chat-open');
-                document.querySelector('main').style.marginRight = '0px';
+                mainContent.classList.remove('main-chat-open');
             }
         }
 
@@ -707,10 +754,7 @@
             const text = input.value.trim();
             if (!text) return;
 
-            // Send via WebRTC Data Channel (Trystero Action)
             sendChatAction({ sender: userName, text: text });
-            
-            // Render locally
             appendChatMessage("You", text, true);
             input.value = '';
         }
@@ -733,9 +777,8 @@
             container.scrollTop = container.scrollHeight;
         }
 
-
         // -------------------------
-        // FEATURE: FULLSCREEN MODE
+        // UTILS & UI CONTROLS
         // -------------------------
         function toggleFullscreen(elementId) {
             const elem = document.getElementById(elementId);
@@ -748,9 +791,6 @@
             }
         }
 
-        // -------------------------
-        // MEDIA CONTROLS & UTILS
-        // -------------------------
         function toggleAudio() {
             isAudioMuted = !isAudioMuted;
             if (localStream) localStream.getAudioTracks()[0].enabled = !isAudioMuted;
@@ -797,11 +837,23 @@
             const setupOverlay = document.getElementById('setupOverlay');
             if (setupOverlay.classList.contains('hidden')) {
                 setupOverlay.classList.remove('hidden');
+                
+                // If opening overlay during a call, show the connection panel's invite info
+                if (isConnected || currentRoomId) {
+                    document.getElementById('step1Panel').classList.add('hidden');
+                    document.getElementById('connectionPanel').classList.remove('hidden');
+                    switchTab('host');
+                    document.getElementById('preGenerateState').classList.add('hidden');
+                    document.getElementById('postGenerateState').classList.remove('hidden');
+                    document.getElementById('roomIdDisplay').innerText = currentRoomId;
+                    document.getElementById('continueHostBtn').classList.add('hidden');
+                    document.getElementById('mainTitle').innerText = "Meeting Info";
+                }
             } else {
                 if(isConnected){
                     setupOverlay.classList.add('hidden');
                 } else {
-                    showToast("Please connect to a meeting first");
+                    showToast("Please complete setup or connect first");
                 }
             }
         }
@@ -813,7 +865,6 @@
             window.location.href = window.location.pathname; 
         }
 
-        // Share Helpers
         function copyRoomId() {
             copyTextSecurely(currentRoomId, "Meeting Code copied!", 'copyRoomBtn', '<i class="fa-solid fa-copy mr-2"></i>Copy Code');
         }
@@ -849,6 +900,7 @@
             toast.classList.remove('opacity-0', 'translate-y-4');
             if (isError) toast.classList.add('border-red-500');
             else toast.classList.remove('border-red-500');
+            
             if(window.toastTimeout) clearTimeout(window.toastTimeout);
             window.toastTimeout = setTimeout(() => {
                 toast.classList.add('opacity-0', 'translate-y-4');
@@ -877,25 +929,6 @@
                 tabHost.classList.add('text-gray-400');
             }
         }
-
-        // Expose functions
-        window.changeDevice = changeDevice;
-        window.togglePreviewAudio = togglePreviewAudio;
-        window.togglePreviewVideo = togglePreviewVideo;
-        window.confirmLobby = confirmLobby;
-        window.createRoom = createRoom;
-        window.joinRoom = joinRoom;
-        window.copyRoomId = copyRoomId;
-        window.copyInviteLink = copyInviteLink;
-        window.toggleAudio = toggleAudio;
-        window.toggleVideo = toggleVideo;
-        window.toggleScreenShare = toggleScreenShare;
-        window.toggleChat = toggleChat;
-        window.sendChatMessage = sendChatMessage;
-        window.toggleFullscreen = toggleFullscreen;
-        window.toggleSetupOverlay = toggleSetupOverlay;
-        window.endCall = endCall;
-        window.switchTab = switchTab;
     </script>
 </body>
 </html>
